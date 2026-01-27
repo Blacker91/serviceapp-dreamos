@@ -25,6 +25,10 @@ const std::string  EXT3_PLAYBACK_MPEGTS_PROGRAM    = "mpegts_program_id";
 const std::string  EXT3_RTMP_PROTOCOL              = "rtmpproto";
 const std::string  EXT3_NICE_VALUE                 = "nice";
 const std::string  EXT3_FFMPEG_SETTING_STRING      = "ffmpeg_option";
+const std::string  EXT3_ARG_LCASE_B                = "b";
+const std::string  EXT3_ARG_5                      = "5";
+const std::string  EXT3_ARG_6                      = "6";
+const std::string  EXT3_ARG_7                      = "7";
 
 SettingMap &ExtEplayer3Options::GetSettingMap()
 {
@@ -55,6 +59,10 @@ ExtEplayer3Options::ExtEplayer3Options()
 	settingMap[EXT3_PLAYBACK_DASH_VIDEO_ID]     = SettingEntry ("-0", "int");
 	settingMap[EXT3_PLAYBACK_DASH_AUDIO_ID]     = SettingEntry ("-1", "int");
 	settingMap[EXT3_FFMPEG_SETTING_STRING]      = SettingEntry ("-f", "string");
+	settingMap[EXT3_ARG_LCASE_B]                = SettingEntry ("-b", "int");
+	settingMap[EXT3_ARG_5]                      = SettingEntry ("-5", "string");
+	settingMap[EXT3_ARG_6]                      = SettingEntry ("-6", "string");
+	settingMap[EXT3_ARG_7]                      = SettingEntry ("-7", "string");
 }
 
 int ExtEplayer3Options::update(const std::string &key, const std::string &val)
