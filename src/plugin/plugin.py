@@ -470,6 +470,31 @@ def _patchDreamOSInfoBar():
     InfoBarSeek.isSeekable = isSeekable
     InfoBarTimeshift.startTimeshift = startTimeshift
     InfoBarSeek._serviceapp_patched = True
+
+    # DreamOS ActionMap blocks 'timeshiftStart' before it reaches the InfoBar
+    # when config.misc.recording_allowed is off, so map it to pause here too.
+    try:
+        from Components.ActionMap import ActionMap
+        if not getattr(ActionMap, "_serviceapp_patched", False):
+            orig_action = ActionMap.action
+
+            def action(self, context, act_name):
+                if act_name == "timeshiftStart":
+                    try:
+                        func = self.actions.get(act_name)
+                        screen = getattr(func, "im_self", None) or getattr(func, "__self__", None)
+                        if screen is not None and _isServiceAppPlaying(screen) and hasattr(screen, "playpauseService"):
+                            print("action -> ", context, act_name, "(ServiceApp: play/pause)")
+                            screen.playpauseService()
+                            return 1
+                    except Exception as e:
+                        print("[ServiceApp] ActionMap hook error:", e)
+                return orig_action(self, context, act_name)
+
+            ActionMap.action = action
+            ActionMap._serviceapp_patched = True
+    except Exception as e:
+        print("[ServiceApp] ActionMap patch skipped:", e)
     print("[ServiceApp] DreamOS InfoBar patched: pause/seek for service types", SERVICEAPP_TYPES)
 
 
