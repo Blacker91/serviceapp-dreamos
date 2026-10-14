@@ -474,7 +474,7 @@ void eServiceApp::pushSubtitles()
 	int delay = eConfigManager::getConfigIntValue("config.subtitles.pango_subtitles_delay");
 	if (isExternalTrack(*m_selected_subtitle_track))
 	{
-		int subtitle_fps = eConfigManager::getConfigIntValue("config.subtitles.pango_subtitles_fps");
+		int subtitle_fps = eConfigManager::getConfigIntValue("config.subtitles.pango_subtitles_fps", 1);
 		if (subtitle_fps != m_prev_subtitle_fps)
 		{
 			m_prev_subtitle_fps = subtitle_fps;
@@ -932,8 +932,13 @@ RESULT eServiceApp::getTrackInfo(iAudioTrackInfo &trackInfo, unsigned int n)
 		}
 	}
 
+#ifdef DREAMOS
+	trackInfo.setDescription(desc);
+	trackInfo.setLanguage(track.language_code);
+#else
 	trackInfo.m_description = desc;
 	trackInfo.m_language = track.language_code;
+#endif
 	return 0;
 }
 
@@ -1277,7 +1282,9 @@ int eServiceApp::getInfo(int w)
 	case sTagSerial:
 	case sTagEncoderVersion:
 	case sTagCRC:
+#ifndef DREAMOS
 	case sBuffer:
+#endif
 		return resNA;
 	case sVideoType:
 	{
@@ -1501,6 +1508,55 @@ eServiceFactoryApp::~eServiceFactoryApp()
 eAutoInitPtr<eServiceFactoryApp> init_eServiceFactoryApp(eAutoInitNumbers::service+3, "eServiceFactoryApp");
 
 
+#ifdef DREAMOS
+// ---------------------------------------------------------------------------
+// DreamOS iSubtitleTrackSelection, mapped onto the OpenPLi-style internals.
+// m_subtitle_tracks is only rebuilt while no track is selected, because
+// m_selected_subtitle_track points into it.
+// ---------------------------------------------------------------------------
+int eServiceApp::getNumberOfSubtitleTracks()
+{
+	if (m_selected_subtitle_track == NULL)
+	{
+		std::vector<SubtitleTrack> tracks;
+		if (getSubtitleList(tracks) < 0)
+			return 0;
+	}
+	return m_subtitle_tracks.size();
+}
+
+RESULT eServiceApp::getSubtitleTrackInfo(iSubtitleTrackInfo &info, unsigned int n)
+{
+	if (n >= m_subtitle_tracks.size())
+		return -1;
+	const SubtitleTrack &t = m_subtitle_tracks[n];
+	info = iSubtitleTrackInfo(iSubtitleType_ENUMS::GST, t.pid, t.language_code,
+		false, false, false, iSubtitleFilterType_ENUMS::SUB_FILTER_SHOW_ALL,
+		iGstSubtitleType_ENUMS::stPlainText);
+	return 0;
+}
+
+int eServiceApp::getCurrentSubtitleTrack()
+{
+	if (m_selected_subtitle_track == NULL || m_subtitle_tracks.empty())
+		return -1;
+	return m_selected_subtitle_track - &m_subtitle_tracks[0];
+}
+
+RESULT eServiceApp::enableSubtitles(eWidget *parent, unsigned int i)
+{
+	(void)parent;
+	eWarning("eServiceApp::enableSubtitles(DreamOS) - subtitle rendering not implemented yet (track %u)", i);
+	return -1;
+}
+
+RESULT eServiceApp::disableSubtitles(eWidget *parent)
+{
+	(void)parent;
+	return disableSubtitles();
+}
+#endif
+
 static PyObject *
 use_user_settings(PyObject *self, PyObject *args)
 {
@@ -1719,6 +1775,7 @@ static PyMethodDef serviceappMethods[] = {
 	 {NULL,NULL,0,NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef = {
 	PyModuleDef_HEAD_INIT,
 	"serviceapp",         /* m_name */
@@ -1730,8 +1787,9 @@ static struct PyModuleDef moduledef = {
 	NULL,                /* m_clear */
 	NULL,                /* m_free */
 };
+#endif
 
-PyMODINIT_FUNC PyInit_serviceapp(void)
+static void serviceapp_init_globals(void)
 {
 	g_GstPlayerOptionsServiceMP3 = new GstPlayerOptions();
 	g_GstPlayerOptionsServiceGst = new GstPlayerOptions();
@@ -1748,5 +1806,19 @@ PyMODINIT_FUNC PyInit_serviceapp(void)
 
 	SSL_load_error_strings();
 	SSL_library_init();
+	}
+
+#if PY_MAJOR_VERSION >= 3
+PyMODINIT_FUNC PyInit_serviceapp(void)
+{
+	serviceapp_init_globals();
 	return PyModule_Create(&moduledef);
 }
+#else
+/* Python 2 (DreamOS 2.5) */
+PyMODINIT_FUNC initserviceapp(void)
+{
+	serviceapp_init_globals();
+	Py_InitModule("serviceapp", serviceappMethods);
+}
+#endif

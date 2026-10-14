@@ -219,6 +219,28 @@ int detectEncoding(const std::string &content, std::string &encoding)
 #endif
 
 #ifndef NO_PYTHON
+#if PY_MAJOR_VERSION < 3
+/* Python 2 (DreamOS 2.5) */
+int convertToUTF8(const std::string &input_string, const std::string &input_encoding, std::string &output_string)
+{
+    PyObject *py_unicode = PyUnicode_Decode(input_string.c_str(), input_string.length(), input_encoding.c_str(), "strict");
+    if (py_unicode == NULL)
+    {
+        PyErr_Print();
+        return 1;
+    }
+    PyObject *py_string = PyUnicode_AsUTF8String(py_unicode);
+    Py_DECREF(py_unicode);
+    if (py_string == NULL)
+    {
+        PyErr_Print();
+        return 1;
+    }
+    output_string.assign(PyString_AsString(py_string), PyString_Size(py_string));
+    Py_DECREF(py_string);
+    return 0;
+}
+#else
 int convertToUTF8(const std::string &input_string, const std::string &input_encoding, std::string &output_string)
 {
     PyObject *py_string, *py_unicode;
@@ -248,6 +270,8 @@ int convertToUTF8(const std::string &input_string, const std::string &input_enco
     Py_DECREF(py_string);
     return 0;
 }
+
+#endif
 
 int convertToUTF8(const std::string &input_string, std::string &output_string)
 {

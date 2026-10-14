@@ -4,6 +4,14 @@
 #include <lib/base/ebase.h>
 #include <lib/base/message.h>
 #include <lib/base/thread.h>
+#ifndef E2_THREAD_MAINLOOP_DEFINED
+#define E2_THREAD_MAINLOOP_DEFINED
+#ifdef DREAMOS
+#define E2_THREAD_MAINLOOP eMainloop_native
+#else
+#define E2_THREAD_MAINLOOP eMainloop
+#endif
+#endif
 #include <lib/python/connections.h>
 
 
@@ -181,9 +189,9 @@ public:
 
 
 #if SIGCXX_MAJOR_VERSION == 2
-class PlayerBackend: public sigc::trackable, public eThread, public eMainloop, public iPlayerCallback
+class PlayerBackend: public sigc::trackable, public eThread, public E2_THREAD_MAINLOOP, public iPlayerCallback
 #else
-class PlayerBackend: public Object, public eThread, public eMainloop, public iPlayerCallback
+class PlayerBackend: public Object, public eThread, public E2_THREAD_MAINLOOP, public iPlayerCallback
 #endif
 {
 	struct Message
@@ -221,6 +229,8 @@ class PlayerBackend: public Object, public eThread, public eMainloop, public iPl
 			subtitleAvailable,
 			error,
 		};
+		Message()
+			:type(-1), dataInt(0) {}	/* DreamOS eFixedMessagePump needs a default ctor */
 		Message(int type)
 			:type(type), dataInt(0) {}
 		Message(int type, int dataInt)

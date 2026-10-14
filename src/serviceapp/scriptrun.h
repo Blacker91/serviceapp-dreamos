@@ -5,6 +5,14 @@
 #include <lib/base/message.h>
 #include <lib/python/connections.h>
 #include <lib/base/thread.h>
+#ifndef E2_THREAD_MAINLOOP_DEFINED
+#define E2_THREAD_MAINLOOP_DEFINED
+#ifdef DREAMOS
+#define E2_THREAD_MAINLOOP eMainloop_native
+#else
+#define E2_THREAD_MAINLOOP eMainloop
+#endif
+#endif
 
 #include "extplayer.h"
 #include "myconsole.h"
@@ -39,9 +47,9 @@ public:
 
 
 #if SIGCXX_MAJOR_VERSION == 2
-class ResolveUrl: public sigc::trackable, public eThread, public eMainloop
+class ResolveUrl: public sigc::trackable, public eThread, public E2_THREAD_MAINLOOP
 #else
-class ResolveUrl: public Object, public eThread, public eMainloop
+class ResolveUrl: public Object, public eThread, public E2_THREAD_MAINLOOP
 #endif
 {
     struct Message
@@ -54,6 +62,8 @@ class ResolveUrl: public Object, public eThread, public eMainloop
             stop,
             tStop,
         };
+        Message()
+            :type(-1) {}	/* DreamOS eFixedMessagePump needs a default ctor */
         Message(int type)
             :type(type) {}
     };

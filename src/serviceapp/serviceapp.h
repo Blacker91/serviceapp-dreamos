@@ -7,6 +7,10 @@
 #include <lib/base/message.h>
 #include <lib/base/thread.h>
 #include <lib/dvb/subtitle.h>
+#ifdef DREAMOS
+#include <lib/gui/esubtitle.h>
+class eWidget;
+#endif
 
 #include "common.h"
 #include "extplayer.h"
@@ -38,7 +42,11 @@ class eServiceApp : public Object,
 					public iStreamedService,
 					public iAudioChannelSelection,
 					public iAudioTrackSelection,
+#ifdef DREAMOS
+					public iSubtitleTrackSelection,
+#else
 					public iSubtitleOutput,
+#endif
 					public iSubserviceList,
 					public iServiceInformation
 {
@@ -167,21 +175,36 @@ public:
 		ptr = 0;
 		return -1;
 	};
+#ifndef DREAMOS
 	RESULT tap(ePtr<iTapService> &ptr)
 	{
 		ptr = nullptr;
 		return -1;
 	};
+#endif
 	RESULT cueSheet(ePtr<iCueSheet> &ptr)
 	{
 		ptr = 0;
 		return -1;
 	};
+#ifdef DREAMOS
+	RESULT subtitleTracks(ePtr<iSubtitleTrackSelection> &ptr)
+	{
+		ptr = this;
+		return 0;
+	};
+	RESULT hbbtv(ePtr<iHbbtv> &ptr)
+	{
+		ptr = 0;
+		return -1;
+	};
+#else
 	RESULT subtitle(ePtr<iSubtitleOutput> &ptr)
 	{
 		ptr = this;
 		return 0;
 	};
+#endif
 	RESULT audioDelay(ePtr<iAudioDelay> &ptr)
 	{
 		ptr = 0;
@@ -224,8 +247,14 @@ public:
 	RESULT isCurrentlySeekable();
 
 	// iStreamedService
+#ifdef DREAMOS
+	std::list<int> getBufferCharge() const { return std::list<int>(); };
+	int setBufferSize(int size) { (void)size; return 0; }
+	void setTransportHeaders(stringMap headers) { (void)headers; }
+#else
 	ePtr<iStreamBufferInfo> getBufferCharge() { return 0; };
 	int setBufferSize(int size) { (void)size; }
+#endif
 
 	// iAudioTrackSelection
 	int getNumberOfTracks();
@@ -237,11 +266,19 @@ public:
 	int getCurrentChannel();
 	RESULT selectChannel(int i);
 
-	// iSubtitleOutput
+	// iSubtitleOutput (OpenPLi) - kept as the internal implementation
 	RESULT enableSubtitles(iSubtitleUser *user, SubtitleTrack &track);
 	RESULT disableSubtitles();
 	RESULT getCachedSubtitle(SubtitleTrack &track);
 	RESULT getSubtitleList(std::vector<SubtitleTrack> &subtitlelist);
+#ifdef DREAMOS
+	// iSubtitleTrackSelection (DreamOS) - mapped onto the functions above
+	int getNumberOfSubtitleTracks();
+	RESULT getSubtitleTrackInfo(iSubtitleTrackInfo &info, unsigned int n);
+	int getCurrentSubtitleTrack();
+	RESULT enableSubtitles(eWidget *parent, unsigned int i);
+	RESULT disableSubtitles(eWidget *parent);
+#endif
 
 	// iSubserviceList
 	int getNumberOfSubservices();

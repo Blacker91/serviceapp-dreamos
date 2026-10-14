@@ -25,9 +25,13 @@ from . import serviceapp_client
 try:
     from Components.SystemInfo import BoxInfo
     IMAGEDISTRO = BoxInfo.getItem("distro")
-except:
-    from boxbranding import getImageDistro
-    IMAGEDISTRO = getImageDistro()
+except Exception:
+    try:
+        from boxbranding import getImageDistro
+        IMAGEDISTRO = getImageDistro()
+    except Exception:
+        # DreamOS has neither BoxInfo nor boxbranding
+        IMAGEDISTRO = "dreamos"
 
 SINKS_DEFAULT = ("", "")
 SINKS_EXPERIMENTAL = ("dvbvideosinkexp", "dvbaudiosinkexp")
@@ -418,6 +422,8 @@ def play_gstplayer(session, service, **kwargs):
 
 def Plugins(**kwargs):
     return [
+            PluginDescriptor(name=_("ServiceApp"), description=_("setup player framework"),
+                where=PluginDescriptor.WHERE_PLUGINMENU, needsRestart=False, fnc=main),
             PluginDescriptor(name=_("ServiceApp"), description=_("setup player framework"),
                 where=PluginDescriptor.WHERE_MENU, needsRestart=False, fnc=menu),
             PluginDescriptor(name=_("ServiceApp"), description=_("Play with ServiceExtEplayer3"),
