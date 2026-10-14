@@ -420,6 +420,66 @@ def play_gstplayer(session, service, **kwargs):
     session.open(ServiceAppPlayer, service=ref)
 
 
+# ---------------------------------------------------------------------------
+# DreamOS: in the live-TV InfoBar, Dream only treats a service as seekable
+# while timeshift runs, so the pause key starts timeshift (not possible for
+# streams). OpenPLi allows pause/seek for stream services; do the same for
+# ServiceApp services (5001/5002).
+# ---------------------------------------------------------------------------
+SERVICEAPP_TYPES = (serviceapp_client.ID_SERVICEGSTPLAYER, serviceapp_client.ID_SERVICEEXTEPLAYER3)
+
+
+def _isServiceAppPlaying(screen):
+    try:
+        ref = screen.session.nav.getCurrentlyPlayingServiceReference()
+        return ref is not None and ref.type in SERVICEAPP_TYPES
+    except Exception:
+        return False
+
+
+def _patchDreamOSInfoBar():
+    try:
+        from Screens.InfoBarGenerics import InfoBarSeek, InfoBarTimeshift
+    except Exception as e:
+        print("[ServiceApp] DreamOS InfoBar patch skipped:", e)
+        return
+    if getattr(InfoBarSeek, "_serviceapp_patched", False):
+        return
+    if not hasattr(InfoBarSeek, "isSeekable") or not hasattr(InfoBarTimeshift, "startTimeshift"):
+        print("[ServiceApp] DreamOS InfoBar patch skipped: unexpected InfoBar API")
+        return
+
+    orig_isSeekable = InfoBarSeek.isSeekable
+
+    def isSeekable(self):
+        if _isServiceAppPlaying(self):
+            try:
+                return self.getSeek() is not None
+            except Exception:
+                pass
+        return orig_isSeekable(self)
+
+    orig_startTimeshift = InfoBarTimeshift.startTimeshift
+
+    def startTimeshift(self):
+        if _isServiceAppPlaying(self) and hasattr(self, "playpauseService"):
+            self.playpauseService()
+            return 0
+        return orig_startTimeshift(self)
+
+    InfoBarSeek.isSeekable = isSeekable
+    InfoBarTimeshift.startTimeshift = startTimeshift
+    InfoBarSeek._serviceapp_patched = True
+    print("[ServiceApp] DreamOS InfoBar patched: pause/seek for service types", SERVICEAPP_TYPES)
+
+
+if IMAGEDISTRO == "dreamos":
+    try:
+        _patchDreamOSInfoBar()
+    except Exception as e:
+        print("[ServiceApp] DreamOS InfoBar patch failed:", e)
+
+
 def Plugins(**kwargs):
     return [
             PluginDescriptor(name=_("ServiceApp"), description=_("setup player framework"),
