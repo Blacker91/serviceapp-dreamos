@@ -167,7 +167,7 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         Screen.__init__(self, session)
         self.skinName = ["ServiceAppSettings", "Setup"]
         ConfigListScreen.__init__(self, [], session)
-        self.setup_title = _("ServiceApp")
+        self.setup_title = "ServiceApp - DreamOS port by Blacker91"
         self.onLayoutFinish.append(self.init_configlist)
         self.onClose.append(self.deinit_config)
         self["key_red"] = StaticText(_("Cancel"))
@@ -182,6 +182,7 @@ class ServiceAppSettings(ConfigListScreen, Screen):
             }, -2)
 
     def init_configlist(self):
+        self.setTitle(self.setup_title)
         config_serviceapp.servicemp3.player.addNotifier(
                 lambda x: self.build_configlist(), initial_call=False)
         config_serviceapp.servicemp3.replace.addNotifier(
