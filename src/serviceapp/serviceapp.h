@@ -326,6 +326,46 @@ public:
 	};
 
 	// iServiceHandler
+#ifdef DREAMOS
+	/* DreamOS: when 4097 is taken over, only refs ServiceApp should play (URLs, or
+	 * everything in "all" mode) are handled here; the rest goes to Dream's servicemp3. */
+	static iServiceHandler *origServiceMP3For(const eServiceReference &ref);
+	static int takeOverServiceMP3(const char *reason);
+	static bool isServiceMP3Replaced();
+	static bool isServiceMP3UrlOnly();
+	RESULT play(const eServiceReference &ref, ePtr<iPlayableService> &ptr)
+	{
+		iServiceHandler *orig = origServiceMP3For(ref);
+		if (orig)
+			return orig->play(ref, ptr);
+		ptr = new eServiceApp(ref);
+		return 0;
+	};
+	RESULT record(const eServiceReference &ref, ePtr<iRecordableService> &ptr)
+	{
+		iServiceHandler *orig = origServiceMP3For(ref);
+		if (orig)
+			return orig->record(ref, ptr);
+		ptr = 0;
+		return -1;
+	};
+	RESULT list(const eServiceReference &ref, ePtr<iListableService> &ptr)
+	{
+		iServiceHandler *orig = origServiceMP3For(ref);
+		if (orig)
+			return orig->list(ref, ptr);
+		ptr = 0;
+		return -1;
+	};
+	RESULT info(const eServiceReference &ref, ePtr<iStaticServiceInformation> &ptr)
+	{
+		iServiceHandler *orig = origServiceMP3For(ref);
+		if (orig)
+			return orig->info(ref, ptr);
+		ptr = m_service_info;
+		return 0;
+	};
+#else
 	RESULT play(const eServiceReference &ref, ePtr<iPlayableService> &ptr)
 	{
 		ptr = new eServiceApp(ref);
@@ -346,6 +386,7 @@ public:
 		ptr = m_service_info;
 		return 0;
 	};
+#endif
 	RESULT offlineOperations(const eServiceReference &, ePtr<iServiceOfflineOperations> &ptr);
 };
 #endif

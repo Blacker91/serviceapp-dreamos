@@ -1,3 +1,5 @@
+#include <cstdio>
+#include <cstring>
 #include "Python.h"
 #include <sstream>
 #include <algorithm>
@@ -43,7 +45,11 @@ enum
 	OPTIONS_USER,
 };
 
+#ifdef DREAMOS
+static int g_playerServiceMP3 = EXTEPLAYER3; /* no ServiceApp gstplayer on DreamOS */
+#else
 static int g_playerServiceMP3 = GSTPLAYER;
+#endif
 static bool g_useUserSettings = false;
 
 static GstPlayerOptions *g_GstPlayerOptionsServiceMP3;
@@ -61,6 +67,27 @@ static eServiceAppOptions *g_ServiceAppOptionsUser;
 
 static const std::string gReplaceServiceMP3Path = eEnv::resolve("$sysconfdir/enigma2/serviceapp_replaceservicemp3");
 static const bool gReplaceServiceMP3 = (access(gReplaceServiceMP3Path.c_str(), F_OK) != -1);
+#ifdef DREAMOS
+#include "dreamos_servicecenter.h"
+/* serviceapp_replaceservicemp3 containing "all" -> ServiceApp plays every 4097 ref;
+ * otherwise (default) only URLs, local files/recordings stay with Dream's servicemp3. */
+static bool readReplaceAllMode()
+{
+	FILE *f = fopen(gReplaceServiceMP3Path.c_str(), "r");
+	if (!f)
+		return false;
+	char buf[32] = {0};
+	size_t n = fread(buf, 1, sizeof(buf) - 1, f);
+	fclose(f);
+	buf[n] = 0;
+	return strstr(buf, "all") != NULL;
+}
+static const bool gReplaceServiceMP3All = gReplaceServiceMP3 && readReplaceAllMode();
+static ePtr<iServiceHandler> gOrigServiceMP3;      /* Dream's servicemp3 handler */
+static eServiceFactoryApp *gFactoryApp = NULL;
+static std::list<std::string> gServiceMP3Extensions;
+static bool gServiceMP3Replaced = false;
+#endif
 
 static HeaderMap getHttpHeaders(const std::string &path)
 {
@@ -198,6 +225,11 @@ RESULT eServiceOfflineOperations::reindex()
 
 RESULT eServiceFactoryApp::offlineOperations(const eServiceReference &ref, ePtr<iServiceOfflineOperations> &ptr)
 {
+#ifdef DREAMOS
+	iServiceHandler *orig = origServiceMP3For(ref);
+	if (orig)
+		return orig->offlineOperations(ref, ptr);
+#endif
 	ptr = new eServiceOfflineOperations(ref);
 	return 0;
 }
@@ -1493,11 +1525,21 @@ eServiceFactoryApp::eServiceFactoryApp()
 		extensions.push_back("ogv");
 		extensions.push_back("webm");
 		extensions.push_back("stream");
+#ifdef DREAMOS
+		gFactoryApp = this;
+		gServiceMP3Extensions = extensions;
+		eDebug("[ServiceApp] factory init: replace servicemp3 (4097) %s (%s), mode %s",
+			gReplaceServiceMP3 ? "requested" : "not requested", gReplaceServiceMP3Path.c_str(),
+			gReplaceServiceMP3All ? "all" : "urls only");
+		if (gReplaceServiceMP3)
+			takeOverServiceMP3("factory init");
+#else
 		if (gReplaceServiceMP3)
 		{
 			sc->removeServiceFactory(eServiceFactoryApp::idServiceMP3);
 			sc->addServiceFactory(eServiceFactoryApp::idServiceMP3, this, extensions);
 		}
+#endif
 		extensions.clear();
 		sc->addServiceFactory(eServiceFactoryApp::idServiceGstPlayer, this, extensions);
 		sc->addServiceFactory(eServiceFactoryApp::idServiceExtEplayer3, this, extensions);
@@ -1513,10 +1555,24 @@ eServiceFactoryApp::~eServiceFactoryApp()
 	eServiceCenter::getPrivInstance(sc);
 	if (sc)
 	{
+#ifdef DREAMOS
+		if (gServiceMP3Replaced)
+		{
+			sc->removeServiceFactory(eServiceFactoryApp::idServiceMP3);
+			if (gOrigServiceMP3)
+			{
+				std::list<std::string> ext = gServiceMP3Extensions;
+				sc->addServiceFactory(eServiceFactoryApp::idServiceMP3, gOrigServiceMP3, ext);
+			}
+			gServiceMP3Replaced = false;
+		}
+		gFactoryApp = NULL;
+#else
 		if (gReplaceServiceMP3)
 		{
 			sc->removeServiceFactory(eServiceFactoryApp::idServiceMP3);
 		}
+#endif
 		sc->removeServiceFactory(eServiceFactoryApp::idServiceGstPlayer);
 		sc->removeServiceFactory(eServiceFactoryApp::idServiceExtEplayer3);
 	}
@@ -1525,6 +1581,66 @@ eServiceFactoryApp::~eServiceFactoryApp()
 
 
 eAutoInitPtr<eServiceFactoryApp> init_eServiceFactoryApp(eAutoInitNumbers::service+3, "eServiceFactoryApp");
+
+#ifdef DREAMOS
+bool eServiceFactoryApp::isServiceMP3Replaced() { return gServiceMP3Replaced; }
+bool eServiceFactoryApp::isServiceMP3UrlOnly() { return !gReplaceServiceMP3All; }
+
+static bool isUrlPath(const std::string &path)
+{
+	return path.find("://") != std::string::npos && path.compare(0, 7, "file://") != 0;
+}
+
+iServiceHandler *eServiceFactoryApp::origServiceMP3For(const eServiceReference &ref)
+{
+	if (ref.type != idServiceMP3 || !gOrigServiceMP3 || gReplaceServiceMP3All || isUrlPath(ref.path))
+		return NULL;
+	return gOrigServiceMP3;
+}
+
+/* (Re)register ServiceApp for 4097. Idempotent; safe to call again later (e.g. at
+ * session start) in case Dream's servicemp3 registered itself after us. */
+int eServiceFactoryApp::takeOverServiceMP3(const char *reason)
+{
+	ePtr<eServiceCenter> sc;
+	eServiceCenter::getPrivInstance(sc);
+	if (!gReplaceServiceMP3 || !gFactoryApp || !sc)
+	{
+		eDebug("[ServiceApp] %s: servicemp3 takeover skipped (requested=%d factory=%p servicecenter=%p)",
+			reason, (int)gReplaceServiceMP3, gFactoryApp, (eServiceCenter*)sc);
+		return -1;
+	}
+	iServiceHandler *cur = dreamos_getServiceHandler(sc, idServiceMP3);
+	if (cur == (iServiceHandler *)gFactoryApp)
+	{
+		gServiceMP3Replaced = true;
+		eDebug("[ServiceApp] %s: 4097 already handled by ServiceApp (%p)", reason, gFactoryApp);
+		return 0;
+	}
+	if (cur)
+	{
+		gOrigServiceMP3 = cur;
+		/* keep Dream's servicemp3 extensions (its local-file handling stays in use) */
+		std::list<std::string> dream_ext;
+		dreamos_getServiceExtensions(sc, idServiceMP3, dream_ext);
+		size_t before = gServiceMP3Extensions.size();
+		for (std::list<std::string>::iterator i = dream_ext.begin(); i != dream_ext.end(); ++i)
+			if (std::find(gServiceMP3Extensions.begin(), gServiceMP3Extensions.end(), *i) == gServiceMP3Extensions.end())
+				gServiceMP3Extensions.push_back(*i);
+		eDebug("[ServiceApp] %s: Dream servicemp3 has %u extensions, %u added to ServiceApp's list",
+			reason, (unsigned)dream_ext.size(), (unsigned)(gServiceMP3Extensions.size() - before));
+	}
+	int rr = sc->removeServiceFactory(idServiceMP3);
+	std::list<std::string> ext = gServiceMP3Extensions;
+	int ra = sc->addServiceFactory(idServiceMP3, gFactoryApp, ext);
+	iServiceHandler *now = dreamos_getServiceHandler(sc, idServiceMP3);
+	gServiceMP3Replaced = (now == (iServiceHandler *)gFactoryApp);
+	eDebug("[ServiceApp] %s: replace 4097: previous handler %p, removeServiceFactory=%d, addServiceFactory=%d, "
+		"now %p, ServiceApp %p -> %s (%s)", reason, cur, rr, ra, now, gFactoryApp,
+		gServiceMP3Replaced ? "OK" : "FAILED", gReplaceServiceMP3All ? "all 4097" : "4097 URLs only, local files -> Dream servicemp3");
+	return gServiceMP3Replaced ? 0 : -1;
+}
+#endif
 
 
 #ifdef DREAMOS
@@ -1754,7 +1870,30 @@ serviceapp_set_setting(PyObject *self, PyObject *args)
 	return Py_BuildValue("b", ret);
 }
 
+#ifdef DREAMOS
+static PyObject *servicemp3_takeover(PyObject *self, PyObject *args)
+{
+	int ret = eServiceFactoryApp::takeOverServiceMP3("python");
+	return Py_BuildValue("i", ret);
+}
+
+static PyObject *servicemp3_replaced(PyObject *self, PyObject *args)
+{
+	/* 0 - not replaced, 1 - 4097 URLs only, 2 - all 4097 */
+	int state = 0;
+	if (eServiceFactoryApp::isServiceMP3Replaced())
+		state = eServiceFactoryApp::isServiceMP3UrlOnly() ? 1 : 2;
+	return Py_BuildValue("i", state);
+}
+#endif
+
 static PyMethodDef serviceappMethods[] = {
+#ifdef DREAMOS
+	{"servicemp3_takeover", servicemp3_takeover, METH_NOARGS,
+	 "DreamOS: (re)register ServiceApp for 4097 if serviceapp_replaceservicemp3 exists; 0 = OK"},
+	{"servicemp3_replaced", servicemp3_replaced, METH_NOARGS,
+	 "DreamOS: 0 - 4097 not handled by ServiceApp, 1 - URLs only, 2 - all 4097 refs"},
+#endif
 	{"use_user_settings", use_user_settings, METH_NOARGS,
 	 "user settings will be used for creation of player"},
 	{"servicemp3_exteplayer3_enable", servicemp3_exteplayer3_enable, METH_NOARGS,

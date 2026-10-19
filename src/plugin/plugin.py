@@ -45,6 +45,11 @@ if (os.path.isfile(eEnv.resolve("$libdir/gstreamer-1.0/libgstdvbvideosinkexp.so"
     sink_choices.append(("experimental", _("experimental")))
 
 player_choices = [("gstplayer", _("gstplayer")), ("exteplayer3", _("exteplayer3"))]
+SERVICEMP3_PLAYER_DEFAULT = "gstplayer"
+# DreamOS: no ServiceApp gstplayer binary -> offer only what is installed, exteplayer3 first
+if not serviceapp_client.isGstPlayerAvailable() and serviceapp_client.isExtEplayer3Available():
+    player_choices = [("exteplayer3", _("exteplayer3"))]
+    SERVICEMP3_PLAYER_DEFAULT = "exteplayer3"
 GSTPLAYER_VERSION = None
 EXTEPLAYER3_VERSION = None
 
@@ -54,7 +59,7 @@ config_serviceapp = config.plugins.serviceapp
 config_serviceapp.servicemp3 = ConfigSubsection()
 config_serviceapp.servicemp3.replace = ConfigBoolean(default=False, descriptions={0: _("original"), 1: _("serviceapp")})
 config_serviceapp.servicemp3.replace.value = serviceapp_client.isServiceMP3Replaced()
-config_serviceapp.servicemp3.player = ConfigSelection(default="gstplayer", choices=player_choices)
+config_serviceapp.servicemp3.player = ConfigSelection(default=SERVICEMP3_PLAYER_DEFAULT, choices=player_choices)
 
 config_serviceapp.options = ConfigSubDict()
 config_serviceapp.options["servicemp3"] = ConfigSubsection()
@@ -430,12 +435,45 @@ def play_gstplayer(session, service, **kwargs):
 SERVICEAPP_TYPES = (serviceapp_client.ID_SERVICEGSTPLAYER, serviceapp_client.ID_SERVICEEXTEPLAYER3)
 
 
+def _servicemp3State():
+    # 0 - 4097 not handled by ServiceApp, 1 - only 4097 URLs, 2 - all 4097 refs
+    try:
+        return serviceapp_client.serviceapp.servicemp3_replaced()
+    except Exception:
+        return 0
+
+
 def _isServiceAppPlaying(screen):
     try:
         ref = screen.session.nav.getCurrentlyPlayingServiceReference()
-        return ref is not None and ref.type in SERVICEAPP_TYPES
+        if ref is None:
+            return False
+        if ref.type in SERVICEAPP_TYPES:
+            return True
+        if ref.type == serviceapp_client.ID_SERVICEMP3:
+            state = _servicemp3State()
+            if state == 2:
+                return True
+            if state == 1:
+                path = ref.getPath()
+                return "://" in path and not path.startswith("file://")
+        return False
     except Exception:
         return False
+
+
+def _takeOverServiceMP3(reason):
+    # DreamOS: (re)register ServiceApp for 4097 once everything else is up, in
+    # case Dream's servicemp3 registered itself after ServiceApp was loaded
+    if not serviceapp_client.isServiceMP3Replaced():
+        return
+    try:
+        ret = serviceapp_client.serviceapp.servicemp3_takeover()
+        state = _servicemp3State()
+        print("[ServiceApp] %s: servicemp3 (4097) takeover %s, mode %s" % (reason,
+            "OK" if ret == 0 else "FAILED", {0: "none", 1: "URLs only", 2: "all"}.get(state, state)))
+    except Exception as e:
+        print("[ServiceApp] %s: servicemp3 takeover error: %s" % (reason, e))
 
 
 def _patchDreamOSInfoBar():
@@ -496,7 +534,8 @@ def _patchDreamOSInfoBar():
             ActionMap._serviceapp_patched = True
     except Exception as e:
         print("[ServiceApp] ActionMap patch skipped:", e)
-    print("[ServiceApp] DreamOS InfoBar patched: pause/seek for service types", SERVICEAPP_TYPES)
+    print("[ServiceApp] DreamOS InfoBar patched: pause/seek for service types", SERVICEAPP_TYPES,
+        "+ 4097 (when servicemp3 is replaced: URLs only unless 'all')")
 
 
 if IMAGEDISTRO == "dreamos":
@@ -504,10 +543,17 @@ if IMAGEDISTRO == "dreamos":
         _patchDreamOSInfoBar()
     except Exception as e:
         print("[ServiceApp] DreamOS InfoBar patch failed:", e)
+    _takeOverServiceMP3("plugin load")
+
+
+def sessionstart(reason, **kwargs):
+    if reason == 0 and IMAGEDISTRO == "dreamos":
+        _takeOverServiceMP3("session start")
 
 
 def Plugins(**kwargs):
     return [
+            PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionstart),
             PluginDescriptor(name=_("ServiceApp"), description=_("setup player framework"),
                 where=PluginDescriptor.WHERE_PLUGINMENU, needsRestart=False, fnc=main),
             PluginDescriptor(name=_("ServiceApp"), description=_("setup player framework"),
