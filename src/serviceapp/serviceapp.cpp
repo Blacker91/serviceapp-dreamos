@@ -350,10 +350,21 @@ void eServiceApp::updateEpgCacheNowNext()
 	bool update = false;
 	ePtr<eServiceEvent> next = 0;
 	ePtr<eServiceEvent> ptr = 0;
+	/* DreamOS: the EPG cache finds events under the original (e.g. 5002) reference;
+	 * the 4097/empty-path equivalent is only a fallback (OpenPLi behaviour). */
 	eServiceReference ref(m_ref);
-	ref.type = eServiceFactoryApp::idServiceMP3;
-	ref.path.clear();
-	if (eEPGCache::getInstance() && eEPGCache::getInstance()->lookupEventTime(ref, -1, ptr) >= 0)
+	bool found = false;
+	if (eEPGCache::getInstance())
+	{
+		found = eEPGCache::getInstance()->lookupEventTime(ref, -1, ptr) >= 0;
+		if (!found)
+		{
+			ref.type = eServiceFactoryApp::idServiceMP3;
+			ref.path.clear();
+			found = eEPGCache::getInstance()->lookupEventTime(ref, -1, ptr) >= 0;
+		}
+	}
+	if (found)
 	{
 		ePtr<eServiceEvent> current = m_event_now;
 		if (!current || !ptr || current->getEventId() != ptr->getEventId())
@@ -376,7 +387,11 @@ void eServiceApp::updateEpgCacheNowNext()
 	}
 	if (next)
 	{
+#ifdef DREAMOS
+		time_t now = ::time(0); /* DreamOS: no nowTime(), system clock is kept in sync by eDVBLocalTimeHandler */
+#else
 		time_t now = eDVBLocalTimeHandler::getInstance()->nowTime();
+#endif
 		refreshtime = (int)(next->getBeginTime() - now) + 3;
 		if (refreshtime <= 0 || refreshtime > 60)
 		{
@@ -1414,8 +1429,12 @@ long long eStaticServiceAppInfo::getFileSize(const eServiceReference &ref)
 RESULT eStaticServiceAppInfo::getEvent(const eServiceReference &ref, ePtr<eServiceEvent> &evt, time_t start_time)
 {
 #ifdef HAVE_EPG
-	if (ref.path.find("://") != std::string::npos)
+	if (ref.path.find("://") != std::string::npos && eEPGCache::getInstance())
 	{
+		/* DreamOS: look up with the original reference first (works for 5002),
+		 * fall back to the 4097/empty-path equivalent. */
+		if (eEPGCache::getInstance()->lookupEventTime(ref, start_time, evt) >= 0)
+			return 0;
 		eServiceReference equivalentref(ref);
 		equivalentref.type = eServiceFactoryApp::idServiceMP3;
 		equivalentref.path.clear();

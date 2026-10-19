@@ -1,0 +1,19 @@
+ServiceApp – DreamOS port (Blacker91)
+=====================================
+
+0.5-dreamos3
+  * EPG v seznamu kanálů pro služby 5002 na DreamOS
+    - eStaticServiceAppInfo::getEvent() a eServiceApp::updateEpgCacheNowNext()
+      nejdřív hledají v eEPGCache s původní referencí (5002), převod na
+      4097 s prázdnou cestou zůstává jen jako záloha
+    - build nově definuje HAVE_EPG (dřív se EPG kód vůbec nepřekládal)
+    - DreamOS nemá eDVBLocalTimeHandler::nowTime() -> ::time(0)
+
+0.5-dreamos2
+  * samostatné balíčky (ServiceApp / exteplayer3-dreamos / ffmpeg-exteplayer3-dreamos)
+  * titulek nastavení „ServiceApp - DreamOS port by Blacker91“, Maintainer Blacker91
+
+0.5-dreamos1
+  * port na DreamOS 2.5 (enigma2 4.3.3r3, Python 2, Dream iservice API)
+  * pauza/posun a timeshiftStart v live-TV InfoBaru pro služby 5001/5002
+  * univerzální balíček mipsel (DM520/DM525) + armhf (DM900/DM920)
