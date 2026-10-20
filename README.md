@@ -7,6 +7,13 @@ Port of [ServiceApp](https://github.com/oe-mirrors/serviceapp) to **DreamOS 2.5*
 [exteplayer3](https://github.com/Blacker91/exteplayer3-dreamos), the same way as on
 OpenPLi / OpenATV, so plugins like ArchivCZSK can use exteplayer3 on a Dreambox.
 
+## ⚠️ Warning
+- **Use at your own risk.** Make a **backup of your image** before installing.
+- Install only on **enigma2 4.3.3r3** (DreamOS 2.5, the last released unstable version),
+  the version it was tested on. Check it on the box with `dpkg -l enigma2`.
+- Tested on a DM520. The DM900/DM920 build is checked against the same enigma2
+  version but has not been tested on the box yet.
+
 ## Supported boxes
 | Box | Architecture |
 |---|---|
