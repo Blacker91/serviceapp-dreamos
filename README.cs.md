@@ -32,9 +32,12 @@ Jeden balíček pro všechny. DreamOS 2.6 (Dreambox One/Two) podporovaný není.
 ## Instalace
 Na boxu (ssh/telnet):
 ```sh
-wget -qO- https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
 ```
 Nainstaluje ServiceApp, exteplayer3 a ffmpeg a restartuje enigmu.
+
+Potřebuje `curl` (v DreamOS obvykle je). `wget` z BusyBoxu v DreamOS z GitHubu stahovat neumí.
+Kdyby `curl` chyběl: `apt-get update && apt-get install curl`.
 
 Ručně: stáhni `.deb` z [Releases](https://github.com/Blacker91/serviceapp-dreamos/releases)
 a [Releases exteplayer3](https://github.com/Blacker91/exteplayer3-dreamos/releases), pak

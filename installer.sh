@@ -1,6 +1,6 @@
 #!/bin/sh
 # ServiceApp + exteplayer3 + ffmpeg for DreamOS 2.5 (DM520/DM525/DM900/DM920)
-#   wget -qO- https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
 SERVICEAPP=0.5-dreamos10
 EXTEPLAYER3=183-dreamos8
 FFMPEG=6.1-dreamos2
@@ -11,13 +11,14 @@ $GH/exteplayer3-dreamos/releases/download/v$EXTEPLAYER3/ffmpeg-exteplayer3-dream
 $GH/serviceapp-dreamos/releases/download/v$SERVICEAPP/enigma2-plugin-systemplugins-serviceapp-dreamos_${SERVICEAPP}_all.deb"
 
 command -v dpkg >/dev/null 2>&1 || { echo "This installer is for DreamOS (.deb) only."; exit 1; }
+# BusyBox wget on DreamOS cannot download from GitHub, curl is needed
+command -v curl >/dev/null 2>&1 || {
+	echo "curl is missing, install it first:  apt-get update && apt-get install curl"
+	exit 1
+}
 
 download() { # <url> <file>
-	if command -v curl >/dev/null 2>&1; then
-		curl -fsSL -o "$2" "$1" || curl -kfsSL -o "$2" "$1"
-	else
-		wget -q -O "$2" "$1" || wget -q --no-check-certificate -O "$2" "$1"
-	fi
+	curl -fsSL -o "$2" "$1" || curl -kfsSL -o "$2" "$1"
 }
 
 TMP=/tmp/serviceapp-dreamos

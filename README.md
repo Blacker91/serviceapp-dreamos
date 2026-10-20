@@ -32,9 +32,12 @@ One package for all of them. DreamOS 2.6 (Dreambox One/Two) is not supported.
 ## Install
 On the box (ssh/telnet):
 ```sh
-wget -qO- https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
 ```
 It installs ServiceApp, exteplayer3 and ffmpeg and restarts enigma2.
+
+Needs `curl` (usually part of DreamOS). The BusyBox `wget` of DreamOS cannot download from GitHub.
+If `curl` is missing: `apt-get update && apt-get install curl`.
 
 Manually: download the `.deb` files from
 [Releases](https://github.com/Blacker91/serviceapp-dreamos/releases) and
