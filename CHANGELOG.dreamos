@@ -1,6 +1,13 @@
 ServiceApp – DreamOS port (Blacker91)
 =====================================
 
+0.5-dreamos6
+  * oprava: Dreamův servicemp3 handler se při ukončení enigmy uvolňoval
+    ze statického destruktoru, možná až po zániku eServiceCenter (riziko pádu
+    při restartu/vypnutí, když je servicemp3 nahrazený)
+  * „Play with ServiceGstPlayer“ v seznamu filmů jen když gstplayer existuje
+    (na DreamOS není, volba vedla na chybu)
+
 0.5-dreamos5
   * ikona pluginu (plugin.png, 100×40) v seznamu pluginů – „ServiceApp by Blacker91“
 

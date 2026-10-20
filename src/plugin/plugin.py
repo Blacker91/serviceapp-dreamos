@@ -560,6 +560,6 @@ def Plugins(**kwargs):
                 where=PluginDescriptor.WHERE_MENU, needsRestart=False, fnc=menu),
             PluginDescriptor(name=_("ServiceApp"), description=_("Play with ServiceExtEplayer3"),
                 where=PluginDescriptor.WHERE_MOVIELIST, needsRestart=False, fnc=play_exteplayer3),
-            PluginDescriptor(name=_("ServiceApp"), description=_("Play with ServiceGstPlayer"),
-                where=PluginDescriptor.WHERE_MOVIELIST, needsRestart=False, fnc=play_gstplayer)
-            ]
+            ] + ([PluginDescriptor(name=_("ServiceApp"), description=_("Play with ServiceGstPlayer"),
+                where=PluginDescriptor.WHERE_MOVIELIST, needsRestart=False, fnc=play_gstplayer)]
+                if serviceapp_client.isGstPlayerAvailable() else [])

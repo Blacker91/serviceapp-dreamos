@@ -83,7 +83,10 @@ static bool readReplaceAllMode()
 	return strstr(buf, "all") != NULL;
 }
 static const bool gReplaceServiceMP3All = gReplaceServiceMP3 && readReplaceAllMode();
-static ePtr<iServiceHandler> gOrigServiceMP3;      /* Dream's servicemp3 handler */
+/* Dream's servicemp3 handler. Deliberately a raw pointer holding one reference that is
+ * never dropped: a static ePtr would Release() it during exit-time static destruction,
+ * possibly after eServiceCenter is gone (its destructor unregisters from the center). */
+static iServiceHandler *gOrigServiceMP3 = NULL;
 static eServiceFactoryApp *gFactoryApp = NULL;
 static std::list<std::string> gServiceMP3Extensions;
 static bool gServiceMP3Replaced = false;
@@ -1619,7 +1622,11 @@ int eServiceFactoryApp::takeOverServiceMP3(const char *reason)
 	}
 	if (cur)
 	{
-		gOrigServiceMP3 = cur;
+		if (cur != gOrigServiceMP3)
+		{
+			cur->AddRef();
+			gOrigServiceMP3 = cur;
+		}
 		/* keep Dream's servicemp3 extensions (its local-file handling stays in use) */
 		std::list<std::string> dream_ext;
 		dreamos_getServiceExtensions(sc, idServiceMP3, dream_ext);
