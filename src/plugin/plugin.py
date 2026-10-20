@@ -46,7 +46,7 @@ if (os.path.isfile(eEnv.resolve("$libdir/gstreamer-1.0/libgstdvbvideosinkexp.so"
 
 player_choices = [("gstplayer", _("gstplayer")), ("exteplayer3", _("exteplayer3"))]
 SERVICEMP3_PLAYER_DEFAULT = "gstplayer"
-# DreamOS: no ServiceApp gstplayer binary -> offer only what is installed, exteplayer3 first
+# no gstplayer (DreamOS): offer exteplayer3 only
 if not serviceapp_client.isGstPlayerAvailable() and serviceapp_client.isExtEplayer3Available():
     player_choices = [("exteplayer3", _("exteplayer3"))]
     SERVICEMP3_PLAYER_DEFAULT = "exteplayer3"
@@ -61,7 +61,7 @@ config_serviceapp.servicemp3.replace = ConfigBoolean(default=False, descriptions
 config_serviceapp.servicemp3.replace.value = serviceapp_client.isServiceMP3Replaced()
 config_serviceapp.servicemp3.player = ConfigSelection(default=SERVICEMP3_PLAYER_DEFAULT, choices=player_choices)
 
-# DreamOS: ServiceApp's own subtitle overlay (DreamOS has no text subtitle page)
+# DreamOS subtitle overlay
 config_serviceapp.subtitles = ConfigSubsection()
 config_serviceapp.subtitles.font_size = ConfigSelection(default="normal",
     choices=[("small", _("small")), ("normal", _("normal")), ("large", _("large")), ("xlarge", _("extra large"))])
@@ -444,12 +444,8 @@ def play_gstplayer(session, service, **kwargs):
     session.open(ServiceAppPlayer, service=ref)
 
 
-# ---------------------------------------------------------------------------
-# DreamOS: in the live-TV InfoBar, Dream only treats a service as seekable
-# while timeshift runs, so the pause key starts timeshift (not possible for
-# streams). OpenPLi allows pause/seek for stream services; do the same for
-# ServiceApp services (5001/5002).
-# ---------------------------------------------------------------------------
+# DreamOS: the live-TV InfoBar only allows pause/seek while timeshift runs.
+# Allow it for services played by ServiceApp, as OpenPLi does.
 SERVICEAPP_TYPES = (serviceapp_client.ID_SERVICEGSTPLAYER, serviceapp_client.ID_SERVICEEXTEPLAYER3)
 
 
@@ -481,8 +477,7 @@ def _isServiceAppPlaying(screen):
 
 
 def _takeOverServiceMP3(reason):
-    # DreamOS: (re)register ServiceApp for 4097 once everything else is up, in
-    # case Dream's servicemp3 registered itself after ServiceApp was loaded
+    # DreamOS: take 4097 again once everything is up
     if not serviceapp_client.isServiceMP3Replaced():
         return
     try:
@@ -528,8 +523,7 @@ def _patchDreamOSInfoBar():
     InfoBarTimeshift.startTimeshift = startTimeshift
     InfoBarSeek._serviceapp_patched = True
 
-    # DreamOS ActionMap blocks 'timeshiftStart' before it reaches the InfoBar
-    # when config.misc.recording_allowed is off, so map it to pause here too.
+    # DreamOS ActionMap drops timeshiftStart when recording is not allowed
     try:
         from Components.ActionMap import ActionMap
         if not getattr(ActionMap, "_serviceapp_patched", False):
@@ -564,16 +558,13 @@ if IMAGEDISTRO == "dreamos":
     _takeOverServiceMP3("plugin load")
 
 
-# ---------------------------------------------------------------------------
-# DreamOS subtitles: eSubtitleWidget has no text page, so ServiceApp's subtitle
-# engine renders into a sink in serviceapp.so and this overlay shows the text.
-# ---------------------------------------------------------------------------
+# DreamOS subtitles: eSubtitleWidget has no text page, show them ourselves
 import re as _re
 _TAG_RE = _re.compile(r"<[^>]*>")
 
 
 def _plainSubtitleText(text):
-    # strip pango/html markup from srt/ass/webvtt and unescape entities
+    # strip markup, unescape entities
     text = _TAG_RE.sub("", text)
     for a, b in (("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'), ("&apos;", "'"), ("&nbsp;", " "), ("&amp;", "&")):
         text = text.replace(a, b)

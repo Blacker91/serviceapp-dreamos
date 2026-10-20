@@ -1,6 +1,4 @@
-/* DreamOS compat: the OpenPLi subtitle-user interface ServiceApp renders into.
-   DreamOS has no text ("pango") page in its eSubtitleWidget, so ServiceApp keeps
-   using this interface and a DreamOS-side adapter (dreamos_subtitles.h) draws it. */
+/* DreamOS compat: OpenPLi subtitle page/user types, used internally only */
 #ifndef __lib_gui_esubtitle_compat_h
 #define __lib_gui_esubtitle_compat_h
 #include <string>

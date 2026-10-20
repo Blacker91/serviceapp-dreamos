@@ -63,7 +63,7 @@ class ResolveUrl: public Object, public eThread, public E2_THREAD_MAINLOOP
             tStop,
         };
         Message()
-            :type(-1) {}	/* DreamOS eFixedMessagePump needs a default ctor */
+            :type(-1) {}	/* needed by DreamOS eFixedMessagePump */
         Message(int type)
             :type(type) {}
     };

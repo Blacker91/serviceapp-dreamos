@@ -47,7 +47,7 @@ enum
 };
 
 #ifdef DREAMOS
-static int g_playerServiceMP3 = EXTEPLAYER3; /* no ServiceApp gstplayer on DreamOS */
+static int g_playerServiceMP3 = EXTEPLAYER3; /* no gstplayer on DreamOS */
 #else
 static int g_playerServiceMP3 = GSTPLAYER;
 #endif
@@ -70,8 +70,7 @@ static const std::string gReplaceServiceMP3Path = eEnv::resolve("$sysconfdir/eni
 static const bool gReplaceServiceMP3 = (access(gReplaceServiceMP3Path.c_str(), F_OK) != -1);
 #ifdef DREAMOS
 #include "dreamos_servicecenter.h"
-/* serviceapp_replaceservicemp3 containing "all" -> ServiceApp plays every 4097 ref;
- * otherwise (default) only URLs, local files/recordings stay with Dream's servicemp3. */
+/* replace file containing "all": take every 4097 ref, otherwise URLs only */
 static bool readReplaceAllMode()
 {
 	FILE *f = fopen(gReplaceServiceMP3Path.c_str(), "r");
@@ -84,9 +83,8 @@ static bool readReplaceAllMode()
 	return strstr(buf, "all") != NULL;
 }
 static const bool gReplaceServiceMP3All = gReplaceServiceMP3 && readReplaceAllMode();
-/* Dream's servicemp3 handler. Deliberately a raw pointer holding one reference that is
- * never dropped: a static ePtr would Release() it during exit-time static destruction,
- * possibly after eServiceCenter is gone (its destructor unregisters from the center). */
+/* Dream's servicemp3; raw pointer with a reference that is never dropped, so it
+ * is not released during static destruction after eServiceCenter is gone */
 static iServiceHandler *gOrigServiceMP3 = NULL;
 static eServiceFactoryApp *gFactoryApp = NULL;
 static std::list<std::string> gServiceMP3Extensions;
@@ -386,8 +384,7 @@ void eServiceApp::updateEpgCacheNowNext()
 	bool update = false;
 	ePtr<eServiceEvent> next = 0;
 	ePtr<eServiceEvent> ptr = 0;
-	/* DreamOS: the EPG cache finds events under the original (e.g. 5002) reference;
-	 * the 4097/empty-path equivalent is only a fallback (OpenPLi behaviour). */
+	/* DreamOS: try the original ref first, then the 4097 equivalent */
 	eServiceReference ref(m_ref);
 	bool found = false;
 	if (eEPGCache::getInstance())
@@ -424,7 +421,7 @@ void eServiceApp::updateEpgCacheNowNext()
 	if (next)
 	{
 #ifdef DREAMOS
-		time_t now = ::time(0); /* DreamOS: no nowTime(), system clock is kept in sync by eDVBLocalTimeHandler */
+		time_t now = ::time(0); /* DreamOS has no nowTime() */
 #else
 		time_t now = eDVBLocalTimeHandler::getInstance()->nowTime();
 #endif
@@ -1467,8 +1464,7 @@ RESULT eStaticServiceAppInfo::getEvent(const eServiceReference &ref, ePtr<eServi
 #ifdef HAVE_EPG
 	if (ref.path.find("://") != std::string::npos && eEPGCache::getInstance())
 	{
-		/* DreamOS: look up with the original reference first (works for 5002),
-		 * fall back to the 4097/empty-path equivalent. */
+		/* DreamOS: try the original ref first, then the 4097 equivalent */
 		if (eEPGCache::getInstance()->lookupEventTime(ref, start_time, evt) >= 0)
 			return 0;
 		eServiceReference equivalentref(ref);
@@ -1602,8 +1598,7 @@ iServiceHandler *eServiceFactoryApp::origServiceMP3For(const eServiceReference &
 	return gOrigServiceMP3;
 }
 
-/* (Re)register ServiceApp for 4097. Idempotent; safe to call again later (e.g. at
- * session start) in case Dream's servicemp3 registered itself after us. */
+/* (re)register ServiceApp for 4097, safe to call repeatedly */
 int eServiceFactoryApp::takeOverServiceMP3(const char *reason)
 {
 	ePtr<eServiceCenter> sc;
@@ -1628,7 +1623,7 @@ int eServiceFactoryApp::takeOverServiceMP3(const char *reason)
 			cur->AddRef();
 			gOrigServiceMP3 = cur;
 		}
-		/* keep Dream's servicemp3 extensions (its local-file handling stays in use) */
+		/* keep Dream's extensions, it still plays local files */
 		std::list<std::string> dream_ext;
 		dreamos_getServiceExtensions(sc, idServiceMP3, dream_ext);
 		size_t before = gServiceMP3Extensions.size();
@@ -1652,11 +1647,9 @@ int eServiceFactoryApp::takeOverServiceMP3(const char *reason)
 
 
 #ifdef DREAMOS
-// ---------------------------------------------------------------------------
-// DreamOS iSubtitleTrackSelection, mapped onto the OpenPLi-style internals.
-// m_subtitle_tracks is only rebuilt while no track is selected, because
-// m_selected_subtitle_track points into it.
-// ---------------------------------------------------------------------------
+// DreamOS iSubtitleTrackSelection on top of the OpenPLi internals.
+// m_subtitle_tracks is only rebuilt while no track is selected
+// (m_selected_subtitle_track points into it).
 int eServiceApp::getNumberOfSubtitleTracks()
 {
 	if (m_selected_subtitle_track == NULL)
@@ -1686,9 +1679,8 @@ int eServiceApp::getCurrentSubtitleTrack()
 	return m_selected_subtitle_track - &m_subtitle_tracks[0];
 }
 
-// DreamOS has no text subtitle page in eSubtitleWidget. ServiceApp's subtitle
-// engine (timing, external .srt, embedded tracks from exteplayer3) stays as is and
-// renders into this sink; the plugin's Python overlay polls it (subtitle_get()).
+// DreamOS eSubtitleWidget has no text page: subtitles go into this sink and
+// the plugin's overlay reads them via subtitle_get().
 class DreamOSSubtitleSink: public iSubtitleUser
 {
 public:
@@ -1745,7 +1737,7 @@ RESULT eServiceApp::enableSubtitles(eWidget *parent, unsigned int i)
 		eWarning("eServiceApp::enableSubtitles(DreamOS) - invalid track %u (%u tracks)", i, (unsigned)m_subtitle_tracks.size());
 		return -1;
 	}
-	SubtitleTrack track = m_subtitle_tracks[i];   /* copy: the vector may be rebuilt */
+	SubtitleTrack track = m_subtitle_tracks[i]; /* copy, vector may be rebuilt */
 	g_dreamosSubtitleSink.clear();
 	RESULT ret = enableSubtitles(&g_dreamosSubtitleSink, track);
 	g_dreamosSubtitleSink.active = (ret == 0);
@@ -1942,7 +1934,7 @@ serviceapp_set_setting(PyObject *self, PyObject *args)
 #ifdef DREAMOS
 static PyObject *subtitle_get(PyObject *self, PyObject *args)
 {
-	/* (active, seq, text) - text is empty when nothing should be shown right now */
+	/* (active, seq, text), text is empty when nothing is shown */
 	const DreamOSSubtitleSink &s = g_dreamosSubtitleSink;
 	bool visible = s.active && !s.text.empty() && DreamOSSubtitleSink::now_ms() < s.expire_ms;
 	return Py_BuildValue("(iIs)", (int)s.active, s.seq, visible ? s.text.c_str() : "");

@@ -4,12 +4,12 @@
 class eServiceCenter;
 class iServiceHandler;
 
-/* Handler currently registered in eServiceCenter for service type 'id' (NULL if none). */
+/* handler registered for service type id, or NULL */
 iServiceHandler *dreamos_getServiceHandler(eServiceCenter *sc, int id);
 
 #include <list>
 #include <string>
-/* File extensions registered for service type 'id' (empty list, -1 if none). */
+/* file extensions registered for service type id */
 int dreamos_getServiceExtensions(eServiceCenter *sc, int id, std::list<std::string> &out);
 
 #endif

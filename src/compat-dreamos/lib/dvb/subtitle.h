@@ -1,5 +1,4 @@
-/* DreamOS compat: OpenPLi's SubtitleTrack, used internally by ServiceApp for
-   bookkeeping only. DreamOS exposes subtitles via iSubtitleTrackSelection. */
+/* DreamOS compat: OpenPLi SubtitleTrack, used internally only */
 #ifndef __lib_dvb_subtitle_compat_h
 #define __lib_dvb_subtitle_compat_h
 #include <string>

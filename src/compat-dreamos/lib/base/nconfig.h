@@ -1,4 +1,4 @@
-/* DreamOS compat: T ePythonConfigQuery::getConfigValue(char const*, std::string&) */
+/* DreamOS compat: ePythonConfigQuery as exported by DreamOS enigma2 */
 #ifndef __lib_base_nconfig_h
 #define __lib_base_nconfig_h
 #include <string>
@@ -10,7 +10,7 @@ public:
 	static int getConfigValue(const char *key, std::string &value);
 };
 
-/* OpenPLi's eConfigManager is not in DreamOS; read through ePythonConfigQuery. */
+/* DreamOS has no eConfigManager, emulate it */
 #include <stdlib.h>
 class eConfigManager
 {

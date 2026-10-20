@@ -1,12 +1,6 @@
 /*
- * DreamOS: read-only access to eServiceCenter's handler map.
- *
- * eServiceCenter (enigma2 4.3.3r3) keeps its factories in a private
- * std::map<int, ePtr<iServiceHandler> > and offers no getter. ServiceApp needs
- * it to (a) verify that the 4097 (servicemp3) takeover is really in effect and
- * (b) keep Dream's own servicemp3 handler to forward local files/recordings to.
- * The layout comes from the enigma2-dev header of the same release, only the
- * access specifier is lifted for this one translation unit.
+ * DreamOS: read access to eServiceCenter's private handler/extension maps
+ * (no getters in enigma2 4.3.3r3). Layout comes from the enigma2-dev header.
  */
 #include <map>
 #include <list>

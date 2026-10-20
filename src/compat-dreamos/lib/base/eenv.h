@@ -1,5 +1,4 @@
-/* DreamOS compat: declaration matching symbols exported by DreamOS 2.5 enigma2
-   T eEnv::resolve(std::string const&) */
+/* DreamOS compat: eEnv as exported by DreamOS enigma2 */
 #ifndef __lib_base_eenv_h
 #define __lib_base_eenv_h
 #include <string>

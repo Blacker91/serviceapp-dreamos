@@ -1,5 +1,4 @@
-/* DreamOS compat: ServiceApp only uses PSignal from C++ (CONNECT), so plain sigc
-   signals are sufficient. */
+/* DreamOS compat: PSignal is only used from C++, plain sigc is enough */
 #ifndef __lib_python_connections_h
 #define __lib_python_connections_h
 #include <lib/base/sigc.h>

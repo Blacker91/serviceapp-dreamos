@@ -230,7 +230,7 @@ class PlayerBackend: public Object, public eThread, public E2_THREAD_MAINLOOP, p
 			error,
 		};
 		Message()
-			:type(-1), dataInt(0) {}	/* DreamOS eFixedMessagePump needs a default ctor */
+			:type(-1), dataInt(0) {}	/* needed by DreamOS eFixedMessagePump */
 		Message(int type)
 			:type(type), dataInt(0) {}
 		Message(int type, int dataInt)

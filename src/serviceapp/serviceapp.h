@@ -266,13 +266,13 @@ public:
 	int getCurrentChannel();
 	RESULT selectChannel(int i);
 
-	// iSubtitleOutput (OpenPLi) - kept as the internal implementation
+	// iSubtitleOutput (OpenPLi), used internally on DreamOS too
 	RESULT enableSubtitles(iSubtitleUser *user, SubtitleTrack &track);
 	RESULT disableSubtitles();
 	RESULT getCachedSubtitle(SubtitleTrack &track);
 	RESULT getSubtitleList(std::vector<SubtitleTrack> &subtitlelist);
 #ifdef DREAMOS
-	// iSubtitleTrackSelection (DreamOS) - mapped onto the functions above
+	// iSubtitleTrackSelection (DreamOS)
 	int getNumberOfSubtitleTracks();
 	RESULT getSubtitleTrackInfo(iSubtitleTrackInfo &info, unsigned int n);
 	int getCurrentSubtitleTrack();
@@ -327,8 +327,7 @@ public:
 
 	// iServiceHandler
 #ifdef DREAMOS
-	/* DreamOS: when 4097 is taken over, only refs ServiceApp should play (URLs, or
-	 * everything in "all" mode) are handled here; the rest goes to Dream's servicemp3. */
+	/* DreamOS: 4097 refs ServiceApp does not play go to Dream's servicemp3 */
 	static iServiceHandler *origServiceMP3For(const eServiceReference &ref);
 	static int takeOverServiceMP3(const char *reason);
 	static bool isServiceMP3Replaced();
