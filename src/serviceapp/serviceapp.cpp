@@ -519,7 +519,12 @@ void eServiceApp::pushSubtitles()
 	int32_t next_timer = 0, decoder_ms, start_ms, end_ms, diff_start_ms, diff_end_ms;
 	subtitle_pages_map::const_iterator current;
 
+#ifdef DREAMOS
+	/* ServiceApp setting in ms (DreamOS has no pango subtitle settings) */
+	int delay = eConfigManager::getConfigIntValue("config.plugins.serviceapp.subtitles.delay") * 90;
+#else
 	int delay = eConfigManager::getConfigIntValue("config.subtitles.pango_subtitles_delay");
+#endif
 	if (isExternalTrack(*m_selected_subtitle_track))
 	{
 		int subtitle_fps = eConfigManager::getConfigIntValue("config.subtitles.pango_subtitles_fps", 1);

@@ -33,10 +33,19 @@ def isServiceMP3Replaced():
 	return os.path.isfile(_SERVICEMP3_REPLACE_PATH)
 
 
-def setServiceMP3Replace(replace):
+def isServiceMP3ReplaceAll():
+	try:
+		return "all" in open(_SERVICEMP3_REPLACE_PATH).read()
+	except (IOError, OSError):
+		return False
+
+
+def setServiceMP3Replace(replace, replace_all=None):
 	if replace:
-		if not os.path.isfile(_SERVICEMP3_REPLACE_PATH):  # keep "all" mode
-			open(_SERVICEMP3_REPLACE_PATH, "wb").close()
+		if replace_all is not None:
+			open(_SERVICEMP3_REPLACE_PATH, "w").write("all\n" if replace_all else "")
+		elif not os.path.isfile(_SERVICEMP3_REPLACE_PATH):  # keep "all" mode
+			open(_SERVICEMP3_REPLACE_PATH, "w").close()
 	else:
 		if os.path.isfile(_SERVICEMP3_REPLACE_PATH):
 			os.remove(_SERVICEMP3_REPLACE_PATH)

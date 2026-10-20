@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5-dreamos9
+- Setting "Play with ServiceApp": streams only, or streams and files (disk, NAS).
+- Setting "Delay" for subtitles.
+
 ## 0.5-dreamos8
 - Subtitles: black box behind the text (setting: black / semi-transparent / outline).
 - No pause in live streams (and no timeshift message), pause stays for videos.

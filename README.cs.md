@@ -47,5 +47,5 @@ Potom nespouštěj `apt-get -f install`, balíčky nejsou v Dreamově feedu a ap
 ## Nastavení
 Menu → Pluginy → ServiceApp.
 - **Enigma2 playback system → serviceapp**: streamy 4097 (např. IPTV bouquety) hraje exteplayer3.
-  Výchozí jsou jen URL; zápis `all` do `/etc/enigma2/serviceapp_replaceservicemp3` převezme všechny služby 4097.
-- **Subtitles**: velikost písma, barva, pozadí, vzdálenost od spodního okraje.
+  **Play with ServiceApp**: jen streamy (výchozí), nebo streamy i soubory z disku/NAS.
+- **Subtitles**: velikost písma, barva, pozadí, zpoždění, vzdálenost od spodního okraje.

@@ -59,6 +59,10 @@ config_serviceapp = config.plugins.serviceapp
 config_serviceapp.servicemp3 = ConfigSubsection()
 config_serviceapp.servicemp3.replace = ConfigBoolean(default=False, descriptions={0: _("original"), 1: _("serviceapp")})
 config_serviceapp.servicemp3.replace.value = serviceapp_client.isServiceMP3Replaced()
+# which 4097 services ServiceApp plays when servicemp3 is replaced (DreamOS)
+config_serviceapp.servicemp3.mode = ConfigSelection(default="urls",
+    choices=[("urls", _("streams only")), ("all", _("streams and files"))])
+config_serviceapp.servicemp3.mode.value = "all" if serviceapp_client.isServiceMP3ReplaceAll() else "urls"
 config_serviceapp.servicemp3.player = ConfigSelection(default=SERVICEMP3_PLAYER_DEFAULT, choices=player_choices)
 
 # DreamOS subtitle overlay
@@ -69,6 +73,8 @@ config_serviceapp.subtitles.color = ConfigSelection(default="#ffffff",
     choices=[("#ffffff", _("white")), ("#ffff00", _("yellow")), ("#d0d0d0", _("light grey"))])
 config_serviceapp.subtitles.background = ConfigSelection(default="black",
     choices=[("black", _("black")), ("semi", _("semi-transparent")), ("none", _("none (outline)"))])
+config_serviceapp.subtitles.delay = ConfigSelection(default="0",
+    choices=[(str(ms), "%+.1f s" % (ms / 1000.0) if ms else "0") for ms in range(-2000, 5001, 100)])
 config_serviceapp.subtitles.position = ConfigSelection(default="6",
     choices=[(str(x), "%d %%" % x) for x in (2, 4, 6, 8, 10, 13, 16, 20, 25)])
 
@@ -277,6 +283,9 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         config_list = [getConfigListEntry(_("Enigma2 playback system"),
             config_serviceapp.servicemp3.replace, _("Select the player which will be used for Enigma2 playback."))]
         if config_serviceapp.servicemp3.replace.value:
+            if IMAGEDISTRO == "dreamos":
+                config_list.append(getConfigListEntry(_("Play with ServiceApp"),
+                    config_serviceapp.servicemp3.mode, _("Streams only, or also files from disk and network (NAS).")))
             config_list.append(getConfigListEntry(_("Player"),
                 config_serviceapp.servicemp3.player, _("Select the player which will be used in serviceapp for Enigma2 playback.")))
             configlist_servicemp3 = [getConfigListEntry("", ConfigNothing())]
@@ -302,13 +311,16 @@ class ServiceAppSettings(ConfigListScreen, Screen):
                 config_serviceapp.subtitles.color, _("Color of ServiceApp subtitles.")))
             config_list.append(getConfigListEntry("  " + _("Background"),
                 config_serviceapp.subtitles.background, _("Background behind ServiceApp subtitles.")))
+            config_list.append(getConfigListEntry("  " + _("Delay"),
+                config_serviceapp.subtitles.delay, _("Positive values show subtitles later.")))
             config_list.append(getConfigListEntry("  " + _("Distance from bottom"),
                 config_serviceapp.subtitles.position, _("Distance of subtitles from the bottom edge of the screen.")))
         self["config"].list = config_list
         self["config"].l.setList(config_list)
 
     def keyOk(self):
-        if config_serviceapp.servicemp3.replace.isChanged():
+        if config_serviceapp.servicemp3.replace.isChanged() or \
+                (config_serviceapp.servicemp3.replace.value and config_serviceapp.servicemp3.mode.isChanged()):
             self.session.openWithCallback(self.save_settings_and_close,
                     MessageBox, _("Enigma2 playback system was changed and Enigma2 should be restarted\n\nDo you want to restart it now?"),
                     type=MessageBox.TYPE_YESNO)
@@ -318,7 +330,7 @@ class ServiceAppSettings(ConfigListScreen, Screen):
     def save_settings_and_close(self, callback=False):
         init_serviceapp_settings()
         if config_serviceapp.servicemp3.replace.value:
-            serviceapp_client.setServiceMP3Replace(True)
+            serviceapp_client.setServiceMP3Replace(True, config_serviceapp.servicemp3.mode.value == "all")
         else:
             serviceapp_client.setServiceMP3Replace(False)
         self.saveAll()
