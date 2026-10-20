@@ -27,7 +27,7 @@ One package for all of them. DreamOS 2.6 (Dreambox One/Two) is not supported.
 - pause / seek in the InfoBar for videos (not in live streams)
 - EPG for 5002 services
 - subtitles (embedded text tracks, external .srt, WebVTT)
-- optional: replace Dream's servicemp3 (4097) for URLs, local files stay with Dream's player
+- optional: replace Dream's servicemp3 (4097) for streams, or for streams and files
 
 ## Install
 On the box (ssh/telnet):

@@ -27,7 +27,7 @@ Jeden balíček pro všechny. DreamOS 2.6 (Dreambox One/Two) podporovaný není.
 - pauza / posun v InfoBaru u videí (ne u živého vysílání)
 - EPG u služeb 5002
 - titulky (textové stopy ve videu, externí .srt, WebVTT)
-- volitelně: náhrada Dreamova servicemp3 (4097) pro URL, lokální soubory dál hraje Dreamův přehrávač
+- volitelně: náhrada Dreamova servicemp3 (4097) pro streamy, nebo pro streamy i soubory
 
 ## Instalace
 Na boxu (ssh/telnet):
