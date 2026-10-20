@@ -1,16 +1,20 @@
 #!/bin/sh
 # ServiceApp + exteplayer3 + ffmpeg for DreamOS 2.5 (DM520/DM525/DM900/DM920)
 #   curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
-SERVICEAPP=0.5-dreamos10
-EXTEPLAYER3=183-dreamos8
-FFMPEG=6.1-dreamos2
-
-GH=https://github.com/Blacker91
-PKGS="$GH/exteplayer3-dreamos/releases/download/v$EXTEPLAYER3/exteplayer3-dreamos_${EXTEPLAYER3}_all.deb
-$GH/exteplayer3-dreamos/releases/download/v$EXTEPLAYER3/ffmpeg-exteplayer3-dreamos_${FFMPEG}_all.deb
-$GH/serviceapp-dreamos/releases/download/v$SERVICEAPP/enigma2-plugin-systemplugins-serviceapp-dreamos_${SERVICEAPP}_all.deb"
+SERVICEAPP=0.5-dreamos11
+EXTEPLAYER3=183-dreamos9
 
 command -v dpkg >/dev/null 2>&1 || { echo "This installer is for DreamOS (.deb) only."; exit 1; }
+ARCH="$(dpkg --print-architecture 2>/dev/null)"
+case "$ARCH" in
+	mipsel|armhf) ;;
+	*) echo "Unsupported box (architecture '$ARCH'), only DM520/DM525/DM900/DM920."; exit 1 ;;
+esac
+
+GH=https://github.com/Blacker91
+PKGS="$GH/exteplayer3-dreamos/releases/download/v$EXTEPLAYER3/exteplayer3-dreamos_${EXTEPLAYER3}_$ARCH.deb
+$GH/serviceapp-dreamos/releases/download/v$SERVICEAPP/enigma2-plugin-systemplugins-serviceapp-dreamos_${SERVICEAPP}_$ARCH.deb"
+
 # BusyBox wget on DreamOS cannot download from GitHub, curl is needed
 command -v curl >/dev/null 2>&1 || {
 	echo "curl is missing, install it first:  apt-get update && apt-get install curl"

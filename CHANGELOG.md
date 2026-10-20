@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5-dreamos11
+- Separate packages for mipsel and armhf, `serviceapp.so` is no longer
+  moved by postinst.
+- Needs exteplayer3-dreamos 183-dreamos9 (exteplayer3 and ffmpeg in one package).
+
 ## 0.5-dreamos10
 - Setting "Play with ServiceApp": streams only, or streams and files (disk, NAS).
 - Subtitles: "Delay" setting, 2.3 s by default (the DM520 decoder reports its

@@ -20,7 +20,7 @@ OpenPLi / OpenATV, so plugins like ArchivCZSK can use exteplayer3 on a Dreambox.
 | DM520, DM525 | mipsel |
 | DM900, DM920 | armhf |
 
-One package for all of them. DreamOS 2.6 (Dreambox One/Two) is not supported.
+Packages are separate for mipsel and armhf, the installer picks the right one. DreamOS 2.6 (Dreambox One/Two) is not supported.
 
 ## Features
 - service type 5002 (exteplayer3): HLS, DASH, CENC DRM keys, separate audio (YouTube)
@@ -34,16 +34,16 @@ On the box (ssh/telnet):
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
 ```
-It installs ServiceApp, exteplayer3 and ffmpeg and restarts enigma2.
+It installs ServiceApp and exteplayer3 (with ffmpeg) and restarts enigma2.
 
 Needs `curl` (usually part of DreamOS). The BusyBox `wget` of DreamOS cannot download from GitHub.
 If `curl` is missing: `apt-get update && apt-get install curl`.
 
-Manually: download the `.deb` files from
+Manually: download the `.deb` files for your box (`_mipsel` for DM520/DM525, `_armhf` for DM900/DM920) from
 [Releases](https://github.com/Blacker91/serviceapp-dreamos/releases) and
 [exteplayer3 Releases](https://github.com/Blacker91/exteplayer3-dreamos/releases), then
 ```sh
-dpkg -i exteplayer3-dreamos_*.deb ffmpeg-exteplayer3-dreamos_*.deb enigma2-plugin-systemplugins-serviceapp-dreamos_*.deb
+dpkg -i exteplayer3-dreamos_*.deb enigma2-plugin-systemplugins-serviceapp-dreamos_*.deb
 systemctl restart enigma2
 ```
 Do not run `apt-get -f install` afterwards, the packages are not in Dream's feed and apt would remove them.

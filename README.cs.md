@@ -20,7 +20,7 @@ OpenPLi / OpenATV. Doplňky jako ArchivCZSK tak můžou exteplayer3 používat i
 | DM520, DM525 | mipsel |
 | DM900, DM920 | armhf |
 
-Jeden balíček pro všechny. DreamOS 2.6 (Dreambox One/Two) podporovaný není.
+Balíčky jsou zvlášť pro mipsel a armhf, instalátor vybere sám. DreamOS 2.6 (Dreambox One/Two) podporovaný není.
 
 ## Co umí
 - služba 5002 (exteplayer3): HLS, DASH, klíče CENC DRM, oddělený zvuk (YouTube)
@@ -34,15 +34,16 @@ Na boxu (ssh/telnet):
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
 ```
-Nainstaluje ServiceApp, exteplayer3 a ffmpeg a restartuje enigmu.
+Nainstaluje ServiceApp a exteplayer3 (včetně ffmpeg) a restartuje enigmu.
 
 Potřebuje `curl` (v DreamOS obvykle je). `wget` z BusyBoxu v DreamOS z GitHubu stahovat neumí.
 Kdyby `curl` chyběl: `apt-get update && apt-get install curl`.
 
-Ručně: stáhni `.deb` z [Releases](https://github.com/Blacker91/serviceapp-dreamos/releases)
+Ručně: stáhni `.deb` pro svůj box (`_mipsel` pro DM520/DM525, `_armhf` pro DM900/DM920) z
+[Releases](https://github.com/Blacker91/serviceapp-dreamos/releases)
 a [Releases exteplayer3](https://github.com/Blacker91/exteplayer3-dreamos/releases), pak
 ```sh
-dpkg -i exteplayer3-dreamos_*.deb ffmpeg-exteplayer3-dreamos_*.deb enigma2-plugin-systemplugins-serviceapp-dreamos_*.deb
+dpkg -i exteplayer3-dreamos_*.deb enigma2-plugin-systemplugins-serviceapp-dreamos_*.deb
 systemctl restart enigma2
 ```
 Potom nespouštěj `apt-get -f install`, balíčky nejsou v Dreamově feedu a apt by je odebral.
