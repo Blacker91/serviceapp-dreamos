@@ -1,6 +1,9 @@
 ServiceApp – DreamOS port (Blacker91)
 =====================================
 
+0.5-dreamos5
+  * ikona pluginu (plugin.png, 100×40) v seznamu pluginů – „ServiceApp by Blacker91“
+
 0.5-dreamos4
   * nahrazení servicemp3 (4097) na DreamOS opravdu funguje a je ověřené
     - eServiceCenter::play() v enigma2 4.3.3r3 vybírá factory jen podle typu

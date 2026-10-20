@@ -555,7 +555,7 @@ def Plugins(**kwargs):
     return [
             PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionstart),
             PluginDescriptor(name=_("ServiceApp"), description=_("setup player framework"),
-                where=PluginDescriptor.WHERE_PLUGINMENU, needsRestart=False, fnc=main),
+                where=PluginDescriptor.WHERE_PLUGINMENU, icon="plugin.png", needsRestart=False, fnc=main),
             PluginDescriptor(name=_("ServiceApp"), description=_("setup player framework"),
                 where=PluginDescriptor.WHERE_MENU, needsRestart=False, fnc=menu),
             PluginDescriptor(name=_("ServiceApp"), description=_("Play with ServiceExtEplayer3"),
