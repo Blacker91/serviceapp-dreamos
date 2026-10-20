@@ -61,6 +61,15 @@ config_serviceapp.servicemp3.replace = ConfigBoolean(default=False, descriptions
 config_serviceapp.servicemp3.replace.value = serviceapp_client.isServiceMP3Replaced()
 config_serviceapp.servicemp3.player = ConfigSelection(default=SERVICEMP3_PLAYER_DEFAULT, choices=player_choices)
 
+# DreamOS: ServiceApp's own subtitle overlay (DreamOS has no text subtitle page)
+config_serviceapp.subtitles = ConfigSubsection()
+config_serviceapp.subtitles.font_size = ConfigSelection(default="normal",
+    choices=[("small", _("small")), ("normal", _("normal")), ("large", _("large")), ("xlarge", _("extra large"))])
+config_serviceapp.subtitles.color = ConfigSelection(default="#ffffff",
+    choices=[("#ffffff", _("white")), ("#ffff00", _("yellow")), ("#d0d0d0", _("light grey"))])
+config_serviceapp.subtitles.position = ConfigSelection(default="6",
+    choices=[(str(x), "%d %%" % x) for x in (2, 4, 6, 8, 10, 13, 16, 20, 25)])
+
 config_serviceapp.options = ConfigSubDict()
 config_serviceapp.options["servicemp3"] = ConfigSubsection()
 config_serviceapp.options["servicegstplayer"] = ConfigSubsection()
@@ -282,6 +291,15 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         config_list.append(getConfigListEntry("", ConfigNothing()))
         config_list.append(getConfigListEntry(_("ServiceExtEplayer3 (%s)" % str(serviceapp_client.ID_SERVICEEXTEPLAYER3)), ConfigNothing()))
         config_list += self.player_options("exteplayer3", "serviceexteplayer3")
+        if IMAGEDISTRO == "dreamos":
+            config_list.append(getConfigListEntry("", ConfigNothing()))
+            config_list.append(getConfigListEntry(_("Subtitles"), ConfigNothing()))
+            config_list.append(getConfigListEntry("  " + _("Font size"),
+                config_serviceapp.subtitles.font_size, _("Size of ServiceApp subtitles.")))
+            config_list.append(getConfigListEntry("  " + _("Color"),
+                config_serviceapp.subtitles.color, _("Color of ServiceApp subtitles.")))
+            config_list.append(getConfigListEntry("  " + _("Distance from bottom"),
+                config_serviceapp.subtitles.position, _("Distance of subtitles from the bottom edge of the screen.")))
         self["config"].list = config_list
         self["config"].l.setList(config_list)
 
@@ -546,9 +564,108 @@ if IMAGEDISTRO == "dreamos":
     _takeOverServiceMP3("plugin load")
 
 
+# ---------------------------------------------------------------------------
+# DreamOS subtitles: eSubtitleWidget has no text page, so ServiceApp's subtitle
+# engine renders into a sink in serviceapp.so and this overlay shows the text.
+# ---------------------------------------------------------------------------
+import re as _re
+_TAG_RE = _re.compile(r"<[^>]*>")
+
+
+def _plainSubtitleText(text):
+    # strip pango/html markup from srt/ass/webvtt and unescape entities
+    text = _TAG_RE.sub("", text)
+    for a, b in (("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'), ("&apos;", "'"), ("&nbsp;", " "), ("&amp;", "&")):
+        text = text.replace(a, b)
+    return text.strip()
+
+
+class ServiceAppSubtitles(Screen):
+    OUTLINE = ((-1, -1), (1, -1), (-1, 1), (1, 1), (0, -1), (0, 1), (-1, 0), (1, 0))
+
+    def __init__(self, session):
+        from enigma import getDesktop
+        size = getDesktop(0).size()
+        w, h = size.width(), size.height()
+        cfg = config_serviceapp.subtitles
+        scale = {"small": 0.8, "normal": 1.0, "large": 1.25, "xlarge": 1.5}.get(cfg.font_size.value, 1.0)
+        fs = max(16, int(h / 20.0 * scale))
+        bh = int(fs * 1.3) * 3 + 10
+        bx = int(w * 0.05)
+        bw = w - 2 * bx
+        by = h - int(h * int(cfg.position.value) / 100.0) - bh
+        o = max(2, fs // 18)
+        widget = '<widget name="%s" position="%d,%d" size="%d,%d" font="Regular;%d" halign="center" valign="bottom" ' \
+                 'foregroundColor="%s" backgroundColor="#ff000000" transparent="1" zPosition="%d" />'
+        widgets = []
+        for i, (dx, dy) in enumerate(self.OUTLINE):
+            widgets.append(widget % ("outline%d" % i, bx + dx * o, by + dy * o, bw, bh, fs, "#000000", 1))
+        widgets.append(widget % ("text", bx, by, bw, bh, fs, cfg.color.value, 2))
+        self.skin = '<screen name="ServiceAppSubtitles" position="0,0" size="%d,%d" flags="wfNoBorder" ' \
+                    'backgroundColor="#ff000000" zPosition="-1">%s</screen>' % (w, h, "".join(widgets))
+        Screen.__init__(self, session)
+        self["text"] = Label("")
+        for i in range(len(self.OUTLINE)):
+            self["outline%d" % i] = Label("")
+        self._last = None
+        from enigma import eTimer
+        self._timer = eTimer()
+        try:
+            self._timer_conn = self._timer.timeout.connect(self._poll)   # DreamOS
+        except AttributeError:
+            self._timer.callback.append(self._poll)
+        self._timer.start(100, False)
+
+    def _poll(self):
+        try:
+            active, seq, text = serviceapp_client.serviceapp.subtitle_get()
+        except Exception:
+            return
+        text = _plainSubtitleText(text) if text else ""
+        if text == self._last:
+            return
+        self._last = text
+        self["text"].setText(text)
+        for i in range(len(self.OUTLINE)):
+            self["outline%d" % i].setText(text)
+        if text:
+            self.show()
+        else:
+            self.hide()
+
+
+_subtitleOverlay = None
+_subtitleSession = None
+
+
+def _createSubtitleOverlay(*args):
+    global _subtitleOverlay
+    if _subtitleSession is None:
+        return
+    if _subtitleOverlay is not None:
+        try:
+            _subtitleOverlay._timer.stop()
+            _subtitleSession.deleteDialog(_subtitleOverlay)
+        except Exception as e:
+            print("[ServiceApp] subtitle overlay delete error:", e)
+        _subtitleOverlay = None
+    try:
+        _subtitleOverlay = _subtitleSession.instantiateDialog(ServiceAppSubtitles)
+        _subtitleOverlay.hide()
+        print("[ServiceApp] DreamOS subtitle overlay ready")
+    except Exception as e:
+        print("[ServiceApp] DreamOS subtitle overlay failed:", e)
+
+
 def sessionstart(reason, **kwargs):
+    global _subtitleSession
     if reason == 0 and IMAGEDISTRO == "dreamos":
         _takeOverServiceMP3("session start")
+        _subtitleSession = kwargs.get("session")
+        _createSubtitleOverlay()
+        for c in (config_serviceapp.subtitles.font_size, config_serviceapp.subtitles.color,
+                  config_serviceapp.subtitles.position):
+            c.addNotifier(_createSubtitleOverlay, initial_call=False)
 
 
 def Plugins(**kwargs):

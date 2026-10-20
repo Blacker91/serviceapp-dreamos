@@ -35,7 +35,8 @@ def isServiceMP3Replaced():
 
 def setServiceMP3Replace(replace):
 	if replace:
-		open(_SERVICEMP3_REPLACE_PATH, "wb").close()
+		if not os.path.isfile(_SERVICEMP3_REPLACE_PATH):   # keep its content ("all" mode on DreamOS)
+			open(_SERVICEMP3_REPLACE_PATH, "wb").close()
 	else:
 		if os.path.isfile(_SERVICEMP3_REPLACE_PATH):
 			os.remove(_SERVICEMP3_REPLACE_PATH)

@@ -1,6 +1,15 @@
 ServiceApp – DreamOS port (Blacker91)
 =====================================
 
+0.5-dreamos7
+  * titulky na DreamOS: vlastní překryvná vrstva ServiceApp
+    - DreamOS eSubtitleWidget nemá textovou stránku; enableSubtitles(eWidget*, i)
+      napojeno na titulkový engine ServiceApp (vložené stopy z exteplayer3,
+      externí .srt), text čte Python overlay (serviceapp.subtitle_get())
+    - text s obrysem dole na obrazovce, značky (pango/html) odstraněny
+    - nastavení: velikost písma, barva, vzdálenost od spodního okraje
+  * uložení nastavení už nepřepíše obsah serviceapp_replaceservicemp3 (režim „all“)
+
 0.5-dreamos6
   * oprava: Dreamův servicemp3 handler se při ukončení enigmy uvolňoval
     ze statického destruktoru, možná až po zániku eServiceCenter (riziko pádu

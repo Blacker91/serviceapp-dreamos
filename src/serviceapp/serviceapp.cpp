@@ -1,3 +1,4 @@
+#include <ctime>
 #include <cstdio>
 #include <cstring>
 #include "Python.h"
@@ -1685,11 +1686,72 @@ int eServiceApp::getCurrentSubtitleTrack()
 	return m_selected_subtitle_track - &m_subtitle_tracks[0];
 }
 
+// DreamOS has no text subtitle page in eSubtitleWidget. ServiceApp's subtitle
+// engine (timing, external .srt, embedded tracks from exteplayer3) stays as is and
+// renders into this sink; the plugin's Python overlay polls it (subtitle_get()).
+class DreamOSSubtitleSink: public iSubtitleUser
+{
+public:
+	bool active;
+	unsigned int seq;
+	std::string text;
+	int64_t expire_ms;
+	DreamOSSubtitleSink(): active(false), seq(0), expire_ms(0) {}
+	static int64_t now_ms()
+	{
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		return (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+	}
+	void setPage(const ePangoSubtitlePage &page)
+	{
+		std::string t;
+		for (std::vector<ePangoSubtitlePageElement>::const_iterator it = page.m_elements.begin(); it != page.m_elements.end(); ++it)
+		{
+			if (!t.empty())
+				t += "\n";
+			t += it->m_pango_line;
+		}
+		text = t;
+		expire_ms = now_ms() + (page.m_timeout > 0 ? page.m_timeout : 3000);
+		seq++;
+	}
+	void destroy()
+	{
+		active = false;
+		text.clear();
+		expire_ms = 0;
+		seq++;
+	}
+	void clear()
+	{
+		text.clear();
+		expire_ms = 0;
+		seq++;
+	}
+};
+static DreamOSSubtitleSink g_dreamosSubtitleSink;
+
 RESULT eServiceApp::enableSubtitles(eWidget *parent, unsigned int i)
 {
 	(void)parent;
-	eWarning("eServiceApp::enableSubtitles(DreamOS) - subtitle rendering not implemented yet (track %u)", i);
-	return -1;
+	if (m_selected_subtitle_track == NULL)
+	{
+		std::vector<SubtitleTrack> tracks;
+		getSubtitleList(tracks);
+	}
+	if (i >= m_subtitle_tracks.size())
+	{
+		eWarning("eServiceApp::enableSubtitles(DreamOS) - invalid track %u (%u tracks)", i, (unsigned)m_subtitle_tracks.size());
+		return -1;
+	}
+	SubtitleTrack track = m_subtitle_tracks[i];   /* copy: the vector may be rebuilt */
+	g_dreamosSubtitleSink.clear();
+	RESULT ret = enableSubtitles(&g_dreamosSubtitleSink, track);
+	g_dreamosSubtitleSink.active = (ret == 0);
+	eDebug("eServiceApp::enableSubtitles(DreamOS) - track %u (%s, pid %d): %s", i,
+		track.language_code.c_str(), track.pid, ret == 0 ? "on" : "failed");
+	return ret;
 }
 
 RESULT eServiceApp::disableSubtitles(eWidget *parent)
@@ -1878,6 +1940,14 @@ serviceapp_set_setting(PyObject *self, PyObject *args)
 }
 
 #ifdef DREAMOS
+static PyObject *subtitle_get(PyObject *self, PyObject *args)
+{
+	/* (active, seq, text) - text is empty when nothing should be shown right now */
+	const DreamOSSubtitleSink &s = g_dreamosSubtitleSink;
+	bool visible = s.active && !s.text.empty() && DreamOSSubtitleSink::now_ms() < s.expire_ms;
+	return Py_BuildValue("(iIs)", (int)s.active, s.seq, visible ? s.text.c_str() : "");
+}
+
 static PyObject *servicemp3_takeover(PyObject *self, PyObject *args)
 {
 	int ret = eServiceFactoryApp::takeOverServiceMP3("python");
@@ -1896,6 +1966,8 @@ static PyObject *servicemp3_replaced(PyObject *self, PyObject *args)
 
 static PyMethodDef serviceappMethods[] = {
 #ifdef DREAMOS
+	{"subtitle_get", subtitle_get, METH_NOARGS,
+	 "DreamOS: current subtitle for the plugin overlay -> (active, seq, text)"},
 	{"servicemp3_takeover", servicemp3_takeover, METH_NOARGS,
 	 "DreamOS: (re)register ServiceApp for 4097 if serviceapp_replaceservicemp3 exists; 0 = OK"},
 	{"servicemp3_replaced", servicemp3_replaced, METH_NOARGS,
