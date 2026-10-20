@@ -8,7 +8,11 @@ command -v dpkg >/dev/null 2>&1 || { echo "This installer is for DreamOS (.deb) 
 ARCH="$(dpkg --print-architecture 2>/dev/null)"
 case "$ARCH" in
 	mipsel|armhf) ;;
-	*) echo "Unsupported box (architecture '$ARCH'), only DM520/DM525/DM900/DM920."; exit 1 ;;
+	*) case "$(uname -m)" in mips*) ARCH=mipsel ;; arm*) ARCH=armhf ;; esac ;;
+esac
+case "$ARCH" in
+	mipsel|armhf) echo "Box architecture: $ARCH" ;;
+	*) echo "Unsupported box ($(uname -m)), only DM520/DM525/DM900/DM920."; exit 1 ;;
 esac
 
 GH=https://github.com/Blacker91
