@@ -1,7 +1,7 @@
 #!/bin/sh
 # ServiceApp + exteplayer3 + ffmpeg for DreamOS 2.5 (DM520/DM525/DM900/DM920)
 #   wget -qO- https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
-SERVICEAPP=0.5-dreamos9
+SERVICEAPP=0.5-dreamos10
 EXTEPLAYER3=183-dreamos8
 FFMPEG=6.1-dreamos2
 

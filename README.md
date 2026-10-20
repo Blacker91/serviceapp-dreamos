@@ -49,4 +49,4 @@ Do not run `apt-get -f install` afterwards, the packages are not in Dream's feed
 Menu → Plugins → ServiceApp.
 - **Enigma2 playback system → serviceapp**: 4097 streams (e.g. IPTV bouquets) are played by exteplayer3.
   **Play with ServiceApp**: streams only (default), or streams and files from disk/NAS.
-- **Subtitles**: font size, colour, background, delay, distance from the bottom.
+- **Subtitles**: font size, colour, background, delay, display time, distance from the bottom.

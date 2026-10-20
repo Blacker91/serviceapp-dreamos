@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import os
+import time
 import json
 
 
@@ -73,8 +74,11 @@ config_serviceapp.subtitles.color = ConfigSelection(default="#ffffff",
     choices=[("#ffffff", _("white")), ("#ffff00", _("yellow")), ("#d0d0d0", _("light grey"))])
 config_serviceapp.subtitles.background = ConfigSelection(default="black",
     choices=[("black", _("black")), ("semi", _("semi-transparent")), ("none", _("none (outline)"))])
-config_serviceapp.subtitles.delay = ConfigSelection(default="0",
+# DM520: the decoder reports its position about 2.3 s ahead of the picture
+config_serviceapp.subtitles.delay = ConfigSelection(default="2300",
     choices=[(str(ms), "%+.1f s" % (ms / 1000.0) if ms else "0") for ms in range(-2000, 5001, 100)])
+config_serviceapp.subtitles.extra_time = ConfigSelection(default="1000",
+    choices=[(str(ms), "+%.1f s" % (ms / 1000.0) if ms else "0") for ms in range(0, 3001, 500)])
 config_serviceapp.subtitles.position = ConfigSelection(default="6",
     choices=[(str(x), "%d %%" % x) for x in (2, 4, 6, 8, 10, 13, 16, 20, 25)])
 
@@ -313,6 +317,8 @@ class ServiceAppSettings(ConfigListScreen, Screen):
                 config_serviceapp.subtitles.background, _("Background behind ServiceApp subtitles.")))
             config_list.append(getConfigListEntry("  " + _("Delay"),
                 config_serviceapp.subtitles.delay, _("Positive values show subtitles later.")))
+            config_list.append(getConfigListEntry("  " + _("Display time"),
+                config_serviceapp.subtitles.extra_time, _("Keep each subtitle longer on screen (until the next one).")))
             config_list.append(getConfigListEntry("  " + _("Distance from bottom"),
                 config_serviceapp.subtitles.position, _("Distance of subtitles from the bottom edge of the screen.")))
         self["config"].list = config_list
@@ -648,6 +654,7 @@ class ServiceAppSubtitles(Screen):
         for i in range(self.outlines):
             self["outline%d" % i] = Label("")
         self._last = None
+        self._hold_until = None
         from enigma import eTimer
         self._timer = eTimer()
         try:
@@ -677,6 +684,15 @@ class ServiceAppSubtitles(Screen):
         except Exception:
             return
         text = _plainSubtitleText(text) if text else ""
+        if text:
+            self._hold_until = None
+        elif active and self._last:
+            # keep the last subtitle a bit longer (Display time), a new one replaces it
+            now = time.time()
+            if self._hold_until is None:
+                self._hold_until = now + int(config_serviceapp.subtitles.extra_time.value) / 1000.0
+            if now < self._hold_until:
+                return
         if text == self._last:
             return
         self._last = text

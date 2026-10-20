@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.5-dreamos9
+## 0.5-dreamos10
 - Setting "Play with ServiceApp": streams only, or streams and files (disk, NAS).
-- Setting "Delay" for subtitles.
+- Subtitles: "Delay" setting, 2.3 s by default (the DM520 decoder reports its
+  position ahead of the picture), "Display time" keeps them longer on screen.
 
 ## 0.5-dreamos8
 - Subtitles: black box behind the text (setting: black / semi-transparent / outline).
