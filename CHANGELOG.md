@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5-dreamos8
+- Subtitles: black box behind the text (setting: black / semi-transparent / outline).
+- No pause in live streams (and no timeshift message), pause stays for videos.
+
 ## 0.5-dreamos7
 - Subtitles: shown by ServiceApp's own overlay (DreamOS has no text subtitle
   page). Embedded text tracks, external .srt, WebVTT from streams.

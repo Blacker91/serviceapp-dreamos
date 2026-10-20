@@ -24,7 +24,7 @@ One package for all of them. DreamOS 2.6 (Dreambox One/Two) is not supported.
 
 ## Features
 - service type 5002 (exteplayer3): HLS, DASH, CENC DRM keys, separate audio (YouTube)
-- pause / seek in the live-TV InfoBar
+- pause / seek in the InfoBar for videos (not in live streams)
 - EPG for 5002 services
 - subtitles (embedded text tracks, external .srt, WebVTT)
 - optional: replace Dream's servicemp3 (4097) for URLs, local files stay with Dream's player
@@ -49,4 +49,4 @@ Do not run `apt-get -f install` afterwards, the packages are not in Dream's feed
 Menu → Plugins → ServiceApp.
 - **Enigma2 playback system → serviceapp**: 4097 streams (e.g. IPTV bouquets) are played by exteplayer3.
   Only URLs by default; write `all` into `/etc/enigma2/serviceapp_replaceservicemp3` to take every 4097 service.
-- **Subtitles**: font size, colour, distance from the bottom.
+- **Subtitles**: font size, colour, background, distance from the bottom.

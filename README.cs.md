@@ -24,7 +24,7 @@ Jeden balíček pro všechny. DreamOS 2.6 (Dreambox One/Two) podporovaný není.
 
 ## Co umí
 - služba 5002 (exteplayer3): HLS, DASH, klíče CENC DRM, oddělený zvuk (YouTube)
-- pauza / posun v InfoBaru u živého vysílání
+- pauza / posun v InfoBaru u videí (ne u živého vysílání)
 - EPG u služeb 5002
 - titulky (textové stopy ve videu, externí .srt, WebVTT)
 - volitelně: náhrada Dreamova servicemp3 (4097) pro URL, lokální soubory dál hraje Dreamův přehrávač
@@ -48,4 +48,4 @@ Potom nespouštěj `apt-get -f install`, balíčky nejsou v Dreamově feedu a ap
 Menu → Pluginy → ServiceApp.
 - **Enigma2 playback system → serviceapp**: streamy 4097 (např. IPTV bouquety) hraje exteplayer3.
   Výchozí jsou jen URL; zápis `all` do `/etc/enigma2/serviceapp_replaceservicemp3` převezme všechny služby 4097.
-- **Subtitles**: velikost písma, barva, vzdálenost od spodního okraje.
+- **Subtitles**: velikost písma, barva, pozadí, vzdálenost od spodního okraje.

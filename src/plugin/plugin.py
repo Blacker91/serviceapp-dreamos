@@ -67,6 +67,8 @@ config_serviceapp.subtitles.font_size = ConfigSelection(default="normal",
     choices=[("small", _("small")), ("normal", _("normal")), ("large", _("large")), ("xlarge", _("extra large"))])
 config_serviceapp.subtitles.color = ConfigSelection(default="#ffffff",
     choices=[("#ffffff", _("white")), ("#ffff00", _("yellow")), ("#d0d0d0", _("light grey"))])
+config_serviceapp.subtitles.background = ConfigSelection(default="black",
+    choices=[("black", _("black")), ("semi", _("semi-transparent")), ("none", _("none (outline)"))])
 config_serviceapp.subtitles.position = ConfigSelection(default="6",
     choices=[(str(x), "%d %%" % x) for x in (2, 4, 6, 8, 10, 13, 16, 20, 25)])
 
@@ -298,6 +300,8 @@ class ServiceAppSettings(ConfigListScreen, Screen):
                 config_serviceapp.subtitles.font_size, _("Size of ServiceApp subtitles.")))
             config_list.append(getConfigListEntry("  " + _("Color"),
                 config_serviceapp.subtitles.color, _("Color of ServiceApp subtitles.")))
+            config_list.append(getConfigListEntry("  " + _("Background"),
+                config_serviceapp.subtitles.background, _("Background behind ServiceApp subtitles.")))
             config_list.append(getConfigListEntry("  " + _("Distance from bottom"),
                 config_serviceapp.subtitles.position, _("Distance of subtitles from the bottom edge of the screen.")))
         self["config"].list = config_list
@@ -445,7 +449,7 @@ def play_gstplayer(session, service, **kwargs):
 
 
 # DreamOS: the live-TV InfoBar only allows pause/seek while timeshift runs.
-# Allow it for services played by ServiceApp, as OpenPLi does.
+# Allow it for videos played by ServiceApp; live streams keep no pause.
 SERVICEAPP_TYPES = (serviceapp_client.ID_SERVICEGSTPLAYER, serviceapp_client.ID_SERVICEEXTEPLAYER3)
 
 
@@ -472,6 +476,21 @@ def _isServiceAppPlaying(screen):
                 path = ref.getPath()
                 return "://" in path and not path.startswith("file://")
         return False
+    except Exception:
+        return False
+
+
+def _isLive(screen):
+    # live stream = no known length; no pause there (and no timeshift message)
+    try:
+        service = screen.session.nav.getCurrentService()
+        seek = service and service.seek()
+        if seek is None:
+            return True
+        length = seek.getLength()
+        if isinstance(length, (list, tuple)):
+            return length[0] != 0 or length[1] <= 0
+        return length <= 0
     except Exception:
         return False
 
@@ -504,7 +523,7 @@ def _patchDreamOSInfoBar():
     orig_isSeekable = InfoBarSeek.isSeekable
 
     def isSeekable(self):
-        if _isServiceAppPlaying(self):
+        if _isServiceAppPlaying(self) and not _isLive(self):
             try:
                 return self.getSeek() is not None
             except Exception:
@@ -515,7 +534,8 @@ def _patchDreamOSInfoBar():
 
     def startTimeshift(self):
         if _isServiceAppPlaying(self) and hasattr(self, "playpauseService"):
-            self.playpauseService()
+            if not _isLive(self):
+                self.playpauseService()
             return 0
         return orig_startTimeshift(self)
 
@@ -535,8 +555,11 @@ def _patchDreamOSInfoBar():
                         func = self.actions.get(act_name)
                         screen = getattr(func, "im_self", None) or getattr(func, "__self__", None)
                         if screen is not None and _isServiceAppPlaying(screen) and hasattr(screen, "playpauseService"):
-                            print("action -> ", context, act_name, "(ServiceApp: play/pause)")
-                            screen.playpauseService()
+                            if _isLive(screen):
+                                print("action -> ", context, act_name, "(ServiceApp: live, ignored)")
+                            else:
+                                print("action -> ", context, act_name, "(ServiceApp: play/pause)")
+                                screen.playpauseService()
                             return 1
                     except Exception as e:
                         print("[ServiceApp] ActionMap hook error:", e)
@@ -573,6 +596,7 @@ def _plainSubtitleText(text):
 
 class ServiceAppSubtitles(Screen):
     OUTLINE = ((-1, -1), (1, -1), (-1, 1), (1, 1), (0, -1), (0, 1), (-1, 0), (1, 0))
+    BACKGROUND = {"black": "#000000", "semi": "#50000000"}
 
     def __init__(self, session):
         from enigma import getDesktop
@@ -581,22 +605,35 @@ class ServiceAppSubtitles(Screen):
         cfg = config_serviceapp.subtitles
         scale = {"small": 0.8, "normal": 1.0, "large": 1.25, "xlarge": 1.5}.get(cfg.font_size.value, 1.0)
         fs = max(16, int(h / 20.0 * scale))
-        bh = int(fs * 1.3) * 3 + 10
-        bx = int(w * 0.05)
-        bw = w - 2 * bx
-        by = h - int(h * int(cfg.position.value) / 100.0) - bh
-        o = max(2, fs // 18)
-        widget = '<widget name="%s" position="%d,%d" size="%d,%d" font="Regular;%d" halign="center" valign="bottom" ' \
-                 'foregroundColor="%s" backgroundColor="#ff000000" transparent="1" zPosition="%d" />'
+        self._bh = int(fs * 1.3) * 3 + 10
+        self._bx = int(w * 0.05)
+        self._bw = w - 2 * self._bx
+        self._by = h - int(h * int(cfg.position.value) / 100.0) - self._bh
+        self._pad = (max(8, fs // 3), max(2, fs // 10))
+        self._bg = self.BACKGROUND.get(cfg.background.value)
+        widget = '<widget name="%s" position="%d,%d" size="%d,%d" font="Regular;%d" halign="center" valign="%s" ' \
+                 'foregroundColor="%s" backgroundColor="%s" transparent="%d" zPosition="%d" />'
+        box = (self._bx, self._by, self._bw, self._bh, fs)
         widgets = []
-        for i, (dx, dy) in enumerate(self.OUTLINE):
-            widgets.append(widget % ("outline%d" % i, bx + dx * o, by + dy * o, bw, bh, fs, "#000000", 1))
-        widgets.append(widget % ("text", bx, by, bw, bh, fs, cfg.color.value, 2))
+        if self._bg:
+            # black box sized to the text, see _layout()
+            widgets.append(widget % (("background",) + box + ("center", "#000000", self._bg, 0, 1)))
+            widgets.append(widget % (("text",) + box + ("center", cfg.color.value, "#ff000000", 1, 2)))
+            self.outlines = 0
+        else:
+            o = max(2, fs // 18)
+            for i, (dx, dy) in enumerate(self.OUTLINE):
+                widgets.append(widget % ("outline%d" % i, self._bx + dx * o, self._by + dy * o, self._bw, self._bh, fs,
+                                         "bottom", "#000000", "#ff000000", 1, 1))
+            widgets.append(widget % (("text",) + box + ("bottom", cfg.color.value, "#ff000000", 1, 2)))
+            self.outlines = len(self.OUTLINE)
         self.skin = '<screen name="ServiceAppSubtitles" position="0,0" size="%d,%d" flags="wfNoBorder" ' \
                     'backgroundColor="#ff000000" zPosition="-1">%s</screen>' % (w, h, "".join(widgets))
         Screen.__init__(self, session)
         self["text"] = Label("")
-        for i in range(len(self.OUTLINE)):
+        if self._bg:
+            self["background"] = Label("")
+        for i in range(self.outlines):
             self["outline%d" % i] = Label("")
         self._last = None
         from enigma import eTimer
@@ -606,6 +643,21 @@ class ServiceAppSubtitles(Screen):
         except AttributeError:
             self._timer.callback.append(self._poll)
         self._timer.start(100, False)
+
+    def _layout(self):
+        # shrink text and background to the size of the text, centred at the bottom
+        from enigma import eSize, ePoint
+        text = self["text"].instance
+        if text is None:
+            return
+        text.resize(eSize(self._bw, self._bh))
+        size = text.calculateSize()
+        w = min(self._bw, size.width() + 2 * self._pad[0])
+        h = min(self._bh, size.height() + 2 * self._pad[1])
+        pos = ePoint(self._bx + (self._bw - w) // 2, self._by + self._bh - h)
+        for name in ("background", "text"):
+            self[name].instance.resize(eSize(w, h))
+            self[name].instance.move(pos)
 
     def _poll(self):
         try:
@@ -617,9 +669,11 @@ class ServiceAppSubtitles(Screen):
             return
         self._last = text
         self["text"].setText(text)
-        for i in range(len(self.OUTLINE)):
+        for i in range(self.outlines):
             self["outline%d" % i].setText(text)
         if text:
+            if self._bg:
+                self._layout()
             self.show()
         else:
             self.hide()
@@ -655,7 +709,7 @@ def sessionstart(reason, **kwargs):
         _subtitleSession = kwargs.get("session")
         _createSubtitleOverlay()
         for c in (config_serviceapp.subtitles.font_size, config_serviceapp.subtitles.color,
-                  config_serviceapp.subtitles.position):
+                  config_serviceapp.subtitles.background, config_serviceapp.subtitles.position):
             c.addNotifier(_createSubtitleOverlay, initial_call=False)
 
 
