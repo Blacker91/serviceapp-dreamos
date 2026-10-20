@@ -53,3 +53,7 @@ Menu → Plugins → ServiceApp.
 - **Enigma2 playback system → serviceapp**: 4097 streams (e.g. IPTV bouquets) are played by exteplayer3.
   **Play with ServiceApp**: streams only (default), or streams and files from disk/NAS.
 - **Subtitles**: font size, colour, background, delay, display time, distance from the bottom.
+
+## Contact
+Bugs and suggestions: [Issues](https://github.com/Blacker91/serviceapp-dreamos/issues) or e-mail
+**dreamosserviceapp@gmail.com**.

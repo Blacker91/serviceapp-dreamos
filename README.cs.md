@@ -52,3 +52,7 @@ Menu → Pluginy → ServiceApp.
 - **Enigma2 playback system → serviceapp**: streamy 4097 (např. IPTV bouquety) hraje exteplayer3.
   **Play with ServiceApp**: jen streamy (výchozí), nebo streamy i soubory z disku/NAS.
 - **Subtitles**: velikost písma, barva, pozadí, zpoždění, doba zobrazení, vzdálenost od spodního okraje.
+
+## Kontakt
+Chyby a návrhy: [Issues](https://github.com/Blacker91/serviceapp-dreamos/issues) nebo e-mail
+**dreamosserviceapp@gmail.com**.
