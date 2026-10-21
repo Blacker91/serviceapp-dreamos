@@ -3,6 +3,7 @@
 ## 0.5-dreamos12
 - "Play with ServiceApp": new choice "files only". Files from disk/NAS are
   played by ServiceApp (exteplayer3), streams stay with Dream's player.
+- Settings: "MP3 software decoding" changed the DTS setting instead of MP3.
 
 ## 0.5-dreamos11
 - Separate packages for mipsel and armhf, `serviceapp.so` is no longer

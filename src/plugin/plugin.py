@@ -242,7 +242,7 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         config_list.append(getConfigListEntry("  " + _("DTS software decoding"),
             exteplayer3_options_cfg.dts_swdecoding, _("Turn on DTS software decoding.")))
         config_list.append(getConfigListEntry("  " + _("MP3 software decoding"),
-            exteplayer3_options_cfg.dts_swdecoding, _("Turn on MP3 software decoding.")))
+            exteplayer3_options_cfg.mp3_swdecoding, _("Turn on MP3 software decoding.")))
         config_list.append(getConfigListEntry("  " + _("WMA software decoding"),
             exteplayer3_options_cfg.wma_swdecoding, _("Turn on WMA1, WMA2, WMA/PRO software decoding.")))
         config_list.append(getConfigListEntry("  " + _("Stereo downmix"),
