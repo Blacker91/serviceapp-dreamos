@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5-dreamos12
+- "Play with ServiceApp": new choice "files only". Files from disk/NAS are
+  played by ServiceApp (exteplayer3), streams stay with Dream's player.
+
 ## 0.5-dreamos11
 - Separate packages for mipsel and armhf, `serviceapp.so` is no longer
   moved by postinst.

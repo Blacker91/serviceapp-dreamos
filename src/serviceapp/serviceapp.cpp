@@ -70,19 +70,34 @@ static const std::string gReplaceServiceMP3Path = eEnv::resolve("$sysconfdir/eni
 static const bool gReplaceServiceMP3 = (access(gReplaceServiceMP3Path.c_str(), F_OK) != -1);
 #ifdef DREAMOS
 #include "dreamos_servicecenter.h"
-/* replace file containing "all": take every 4097 ref, otherwise URLs only */
-static bool readReplaceAllMode()
+/* which 4097 refs ServiceApp plays, from the replace file:
+ * "all" - every 4097 ref, "files" - local files only, empty - URLs only */
+enum { REPLACE_URLS = 1, REPLACE_ALL = 2, REPLACE_FILES = 3 };
+static int readReplaceMode()
 {
 	FILE *f = fopen(gReplaceServiceMP3Path.c_str(), "r");
 	if (!f)
-		return false;
+		return REPLACE_URLS;
 	char buf[32] = {0};
 	size_t n = fread(buf, 1, sizeof(buf) - 1, f);
 	fclose(f);
 	buf[n] = 0;
-	return strstr(buf, "all") != NULL;
+	if (strstr(buf, "all"))
+		return REPLACE_ALL;
+	if (strstr(buf, "files"))
+		return REPLACE_FILES;
+	return REPLACE_URLS;
 }
-static const bool gReplaceServiceMP3All = gReplaceServiceMP3 && readReplaceAllMode();
+static const int gReplaceServiceMP3Mode = gReplaceServiceMP3 ? readReplaceMode() : 0;
+static const char *replaceModeName()
+{
+	switch (gReplaceServiceMP3Mode)
+	{
+	case REPLACE_ALL: return "all 4097";
+	case REPLACE_FILES: return "4097 local files only, URLs -> Dream servicemp3";
+	default: return "4097 URLs only, local files -> Dream servicemp3";
+	}
+}
 /* Dream's servicemp3; raw pointer with a reference that is never dropped, so it
  * is not released during static destruction after eServiceCenter is gone */
 static iServiceHandler *gOrigServiceMP3 = NULL;
@@ -1535,7 +1550,7 @@ eServiceFactoryApp::eServiceFactoryApp()
 		gServiceMP3Extensions = extensions;
 		eDebug("[ServiceApp] factory init: replace servicemp3 (4097) %s (%s), mode %s",
 			gReplaceServiceMP3 ? "requested" : "not requested", gReplaceServiceMP3Path.c_str(),
-			gReplaceServiceMP3All ? "all" : "urls only");
+			replaceModeName());
 		if (gReplaceServiceMP3)
 			takeOverServiceMP3("factory init");
 #else
@@ -1589,7 +1604,7 @@ eAutoInitPtr<eServiceFactoryApp> init_eServiceFactoryApp(eAutoInitNumbers::servi
 
 #ifdef DREAMOS
 bool eServiceFactoryApp::isServiceMP3Replaced() { return gServiceMP3Replaced; }
-bool eServiceFactoryApp::isServiceMP3UrlOnly() { return !gReplaceServiceMP3All; }
+int eServiceFactoryApp::serviceMP3ReplaceMode() { return gReplaceServiceMP3Mode; }
 
 static bool isUrlPath(const std::string &path)
 {
@@ -1598,9 +1613,14 @@ static bool isUrlPath(const std::string &path)
 
 iServiceHandler *eServiceFactoryApp::origServiceMP3For(const eServiceReference &ref)
 {
-	if (ref.type != idServiceMP3 || !gOrigServiceMP3 || gReplaceServiceMP3All || isUrlPath(ref.path))
+	if (ref.type != idServiceMP3 || !gOrigServiceMP3)
 		return NULL;
-	return gOrigServiceMP3;
+	bool url = isUrlPath(ref.path);
+	if (gReplaceServiceMP3Mode == REPLACE_URLS && !url)
+		return gOrigServiceMP3;
+	if (gReplaceServiceMP3Mode == REPLACE_FILES && url)
+		return gOrigServiceMP3;
+	return NULL;
 }
 
 /* (re)register ServiceApp for 4097, safe to call repeatedly */
@@ -1645,7 +1665,7 @@ int eServiceFactoryApp::takeOverServiceMP3(const char *reason)
 	gServiceMP3Replaced = (now == (iServiceHandler *)gFactoryApp);
 	eDebug("[ServiceApp] %s: replace 4097: previous handler %p, removeServiceFactory=%d, addServiceFactory=%d, "
 		"now %p, ServiceApp %p -> %s (%s)", reason, cur, rr, ra, now, gFactoryApp,
-		gServiceMP3Replaced ? "OK" : "FAILED", gReplaceServiceMP3All ? "all 4097" : "4097 URLs only, local files -> Dream servicemp3");
+		gServiceMP3Replaced ? "OK" : "FAILED", replaceModeName());
 	return gServiceMP3Replaced ? 0 : -1;
 }
 #endif
@@ -1953,10 +1973,10 @@ static PyObject *servicemp3_takeover(PyObject *self, PyObject *args)
 
 static PyObject *servicemp3_replaced(PyObject *self, PyObject *args)
 {
-	/* 0 - not replaced, 1 - 4097 URLs only, 2 - all 4097 */
+	/* 0 - not replaced, 1 - 4097 URLs only, 2 - all 4097, 3 - 4097 local files only */
 	int state = 0;
 	if (eServiceFactoryApp::isServiceMP3Replaced())
-		state = eServiceFactoryApp::isServiceMP3UrlOnly() ? 1 : 2;
+		state = eServiceFactoryApp::serviceMP3ReplaceMode();
 	return Py_BuildValue("i", state);
 }
 #endif

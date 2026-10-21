@@ -27,7 +27,7 @@ Packages are separate for mipsel and armhf, the installer picks the right one. D
 - pause / seek in the InfoBar for videos (not in live streams)
 - EPG for 5002 services
 - subtitles (embedded text tracks, external .srt, WebVTT)
-- optional: replace Dream's servicemp3 (4097) for streams, or for streams and files
+- optional: replace Dream's servicemp3 (4097) for streams, files, or both
 
 ## Install
 On the box (ssh/telnet):
@@ -51,7 +51,7 @@ Do not run `apt-get -f install` afterwards, the packages are not in Dream's feed
 ## Settings
 Menu → Plugins → ServiceApp.
 - **Enigma2 playback system → serviceapp**: 4097 streams (e.g. IPTV bouquets) are played by exteplayer3.
-  **Play with ServiceApp**: streams only (default), or streams and files from disk/NAS.
+  **Play with ServiceApp**: streams only (default), streams and files, or files from disk/NAS only.
 - **Subtitles**: font size, colour, background, delay, display time, distance from the bottom.
 
 ## Contact

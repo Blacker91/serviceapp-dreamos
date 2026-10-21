@@ -27,7 +27,7 @@ Balíčky jsou zvlášť pro mipsel a armhf, instalátor vybere sám. DreamOS 2.
 - pauza / posun v InfoBaru u videí (ne u živého vysílání)
 - EPG u služeb 5002
 - titulky (textové stopy ve videu, externí .srt, WebVTT)
-- volitelně: náhrada Dreamova servicemp3 (4097) pro streamy, nebo pro streamy i soubory
+- volitelně: náhrada Dreamova servicemp3 (4097) pro streamy, soubory, nebo obojí
 
 ## Instalace
 Na boxu (ssh/telnet):
@@ -51,7 +51,7 @@ Potom nespouštěj `apt-get -f install`, balíčky nejsou v Dreamově feedu a ap
 ## Nastavení
 Menu → Pluginy → ServiceApp.
 - **Enigma2 playback system → serviceapp**: streamy 4097 (např. IPTV bouquety) hraje exteplayer3.
-  **Play with ServiceApp**: jen streamy (výchozí), nebo streamy i soubory z disku/NAS.
+  **Play with ServiceApp**: jen streamy (výchozí), streamy i soubory, nebo jen soubory z disku/NAS.
 - **Subtitles**: velikost písma, barva, pozadí, zpoždění, doba zobrazení, vzdálenost od spodního okraje.
 
 ## Kontakt

@@ -331,7 +331,7 @@ public:
 	static iServiceHandler *origServiceMP3For(const eServiceReference &ref);
 	static int takeOverServiceMP3(const char *reason);
 	static bool isServiceMP3Replaced();
-	static bool isServiceMP3UrlOnly();
+	static int serviceMP3ReplaceMode();
 	RESULT play(const eServiceReference &ref, ePtr<iPlayableService> &ptr)
 	{
 		iServiceHandler *orig = origServiceMP3For(ref);

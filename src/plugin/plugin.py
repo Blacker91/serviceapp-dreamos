@@ -62,8 +62,8 @@ config_serviceapp.servicemp3.replace = ConfigBoolean(default=False, descriptions
 config_serviceapp.servicemp3.replace.value = serviceapp_client.isServiceMP3Replaced()
 # which 4097 services ServiceApp plays when servicemp3 is replaced (DreamOS)
 config_serviceapp.servicemp3.mode = ConfigSelection(default="urls",
-    choices=[("urls", _("streams only")), ("all", _("streams and files"))])
-config_serviceapp.servicemp3.mode.value = "all" if serviceapp_client.isServiceMP3ReplaceAll() else "urls"
+    choices=[("urls", _("streams only")), ("all", _("streams and files")), ("files", _("files only"))])
+config_serviceapp.servicemp3.mode.value = serviceapp_client.getServiceMP3ReplaceMode()
 config_serviceapp.servicemp3.player = ConfigSelection(default=SERVICEMP3_PLAYER_DEFAULT, choices=player_choices)
 
 # DreamOS subtitle overlay
@@ -289,7 +289,7 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         if config_serviceapp.servicemp3.replace.value:
             if IMAGEDISTRO == "dreamos":
                 config_list.append(getConfigListEntry(_("Play with ServiceApp"),
-                    config_serviceapp.servicemp3.mode, _("Streams only, or also files from disk and network (NAS).")))
+                    config_serviceapp.servicemp3.mode, _("Streams only, streams and files, or only files from disk and network (NAS).")))
             config_list.append(getConfigListEntry(_("Player"),
                 config_serviceapp.servicemp3.player, _("Select the player which will be used in serviceapp for Enigma2 playback.")))
             configlist_servicemp3 = [getConfigListEntry("", ConfigNothing())]
@@ -336,7 +336,7 @@ class ServiceAppSettings(ConfigListScreen, Screen):
     def save_settings_and_close(self, callback=False):
         init_serviceapp_settings()
         if config_serviceapp.servicemp3.replace.value:
-            serviceapp_client.setServiceMP3Replace(True, config_serviceapp.servicemp3.mode.value == "all")
+            serviceapp_client.setServiceMP3Replace(True, config_serviceapp.servicemp3.mode.value)
         else:
             serviceapp_client.setServiceMP3Replace(False)
         self.saveAll()
@@ -472,7 +472,7 @@ SERVICEAPP_TYPES = (serviceapp_client.ID_SERVICEGSTPLAYER, serviceapp_client.ID_
 
 
 def _servicemp3State():
-    # 0 - 4097 not handled by ServiceApp, 1 - only 4097 URLs, 2 - all 4097 refs
+    # 0 - 4097 not handled by ServiceApp, 1 - only 4097 URLs, 2 - all 4097 refs, 3 - only local files
     try:
         return serviceapp_client.serviceapp.servicemp3_replaced()
     except Exception:
@@ -490,9 +490,10 @@ def _isServiceAppPlaying(screen):
             state = _servicemp3State()
             if state == 2:
                 return True
-            if state == 1:
+            if state in (1, 3):
                 path = ref.getPath()
-                return "://" in path and not path.startswith("file://")
+                url = "://" in path and not path.startswith("file://")
+                return url if state == 1 else not url
         return False
     except Exception:
         return False
