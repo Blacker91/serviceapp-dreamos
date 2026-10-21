@@ -4,6 +4,12 @@
 - "Play with ServiceApp": new choice "files only". Files from disk/NAS are
   played by ServiceApp (exteplayer3), streams stay with Dream's player.
 - Settings: "MP3 software decoding" changed the DTS setting instead of MP3.
+- From upstream ServiceApp (oe-mirrors, 2024-2026): exteplayer3 options are
+  passed as separate arguments ("-a" "0" instead of "-a 0"), string options
+  from the play URL (e.g. #sapp_ffmpeg_option=) are no longer ignored, new
+  options -b and -5/-6/-7 (DASH CENC keys) and sapp_args, HLS master
+  playlists: correct relative variant URLs and audio of separate renditions,
+  getInfo(sServiceref) fix, translated section titles in the settings.
 
 ## 0.5-dreamos11
 - Separate packages for mipsel and armhf, `serviceapp.so` is no longer

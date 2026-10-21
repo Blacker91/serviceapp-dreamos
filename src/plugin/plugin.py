@@ -293,7 +293,7 @@ class ServiceAppSettings(ConfigListScreen, Screen):
             config_list.append(getConfigListEntry(_("Player"),
                 config_serviceapp.servicemp3.player, _("Select the player which will be used in serviceapp for Enigma2 playback.")))
             configlist_servicemp3 = [getConfigListEntry("", ConfigNothing())]
-            configlist_servicemp3.append(getConfigListEntry(_("ServiceMp3 (%s)" % str(serviceapp_client.ID_SERVICEMP3)), ConfigNothing()))
+            configlist_servicemp3.append(getConfigListEntry(_("ServiceMp3 (%s)") % str(serviceapp_client.ID_SERVICEMP3), ConfigNothing()))
             if config_serviceapp.servicemp3.player.value == "gstplayer":
                 config_list += configlist_servicemp3 + self.player_options("gstplayer", "servicemp3")
             elif config_serviceapp.servicemp3.player.value == "exteplayer3":
@@ -301,10 +301,10 @@ class ServiceAppSettings(ConfigListScreen, Screen):
             else:
                 config_list += configlist_servicemp3
         config_list.append(getConfigListEntry("", ConfigNothing()))
-        config_list.append(getConfigListEntry(_("ServiceGstPlayer (%s)" % str(serviceapp_client.ID_SERVICEGSTPLAYER)), ConfigNothing()))
+        config_list.append(getConfigListEntry(_("ServiceGstPlayer (%s)") % str(serviceapp_client.ID_SERVICEGSTPLAYER), ConfigNothing()))
         config_list += self.player_options("gstplayer", "servicegstplayer")
         config_list.append(getConfigListEntry("", ConfigNothing()))
-        config_list.append(getConfigListEntry(_("ServiceExtEplayer3 (%s)" % str(serviceapp_client.ID_SERVICEEXTEPLAYER3)), ConfigNothing()))
+        config_list.append(getConfigListEntry(_("ServiceExtEplayer3 (%s)") % str(serviceapp_client.ID_SERVICEEXTEPLAYER3), ConfigNothing()))
         config_list += self.player_options("exteplayer3", "serviceexteplayer3")
         if IMAGEDISTRO == "dreamos":
             config_list.append(getConfigListEntry("", ConfigNothing()))
