@@ -15,7 +15,7 @@ for a in mipsel:mipsel arm:armhf; do
   P="$WORK/pkg-$ARCH"; PD="$P/usr/lib/enigma2/python/Plugins/SystemPlugins/ServiceApp"
   rm -rf "$P"; mkdir -p "$P/DEBIAN" "$PD" "$P/usr/share/doc/$N"
   install -m 755 "$so" "$PD/serviceapp.so"
-  cp "$ROOT"/src/plugin/{__init__.py,plugin.py,serviceapp_client.py,plugin.png} "$PD/"
+  cp "$ROOT"/src/plugin/{__init__.py,plugin.py,serviceapp_client.py,plugin.png,keymap_plexdream.xml} "$PD/"
   cp "$ROOT/CHANGELOG.md" "$P/usr/share/doc/$N/changelog"
   cp "$ROOT/COPYING" "$P/usr/share/doc/$N/copyright"
   cat > "$P/DEBIAN/control" <<EOF

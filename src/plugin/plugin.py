@@ -592,12 +592,26 @@ def _patchDreamOSInfoBar():
         "+ 4097 (when servicemp3 is replaced: URLs only unless 'all')")
 
 
+def _addPlexDreamSeekKeys():
+    # PlexDream's player keymap has no "skip (enter time)" key, add the InfoBar ones
+    plex_keymap = "/usr/lib/enigma2/python/Plugins/Extensions/PlexDream/keymap.xml"
+    try:
+        if not os.path.isfile(plex_keymap) or "seekFwdManual" in open(plex_keymap).read():
+            return
+        from keymapparser import readKeymap
+        readKeymap(os.path.join(os.path.dirname(os.path.abspath(__file__)), "keymap_plexdream.xml"))
+        print("[ServiceApp] PlexDream: hold << / >> to skip by minutes")
+    except Exception as e:
+        print("[ServiceApp] PlexDream keymap not added:", e)
+
+
 if IMAGEDISTRO == "dreamos":
     try:
         _patchDreamOSInfoBar()
     except Exception as e:
         print("[ServiceApp] DreamOS InfoBar patch failed:", e)
     _takeOverServiceMP3("plugin load")
+    _addPlexDreamSeekKeys()
 
 
 # DreamOS subtitles: eSubtitleWidget has no text page, show them ourselves

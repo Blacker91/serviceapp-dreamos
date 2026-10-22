@@ -4,6 +4,8 @@
 - DreamOS playback events evPlay, evPause and evSeek, like Dream's servicemp3.
   PlexDream waits for evPlay: number key seeking, resume from the last
   position and the Plex timeline (watched status) now work with exteplayer3.
+- PlexDream player: hold << / >> to skip by an entered number of minutes
+  (added at start, the PlexDream files are not changed).
 
 ## 0.5-dreamos12
 - "Play with ServiceApp": new choice "files only". Files from disk/NAS are

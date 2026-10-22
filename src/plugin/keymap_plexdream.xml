@@ -1,0 +1,9 @@
+<keymap>
+	<!-- PlexDream player: hold << / >> to skip by an entered number of minutes, as in the InfoBar -->
+	<map context="PlexDream_Seek_Actions">
+		<key id="KEY_REWIND" mapto="seekBackManual" flags="l" />
+		<key id="KEY_FASTFORWARD" mapto="seekFwdManual" flags="l" />
+		<key id="KEY_PREVIOUSSONG" mapto="seekBackManual" flags="l" />
+		<key id="KEY_NEXTSONG" mapto="seekFwdManual" flags="l" />
+	</map>
+</keymap>
