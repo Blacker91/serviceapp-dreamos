@@ -670,6 +670,11 @@ void eServiceApp::gotExtPlayerMessage(int message)
 #ifdef HAVE_EPG
 			updateEpgCacheNowNext();
 #endif
+#ifdef DREAMOS
+			/* Dream's servicemp3 reports these, plugins like PlexDream wait for evPlay */
+			m_event(this, evSeekableStatusChanged);
+			m_event(this, evPlay);
+#endif
 			break;
 		case PlayerMessage::stop:
 			eDebug("eServiceApp::gotExtPlayerMessage - stop");
@@ -684,10 +689,16 @@ void eServiceApp::gotExtPlayerMessage(int message)
 		case PlayerMessage::pause:
 			eDebug("eServiceApp::gotExtPlayerMessage - pause");
 			m_paused = true;
+#ifdef DREAMOS
+			m_event(this, evPause);
+#endif
 			break;
 		case PlayerMessage::resume:
 			eDebug("eServiceApp::gotExtPlayerMessage - resume");
 			m_paused = false;
+#ifdef DREAMOS
+			m_event(this, evPlay);
+#endif
 			break;
 		case PlayerMessage::error:
 			eDebug("eServiceApp::gotExtPlayerMessage - error");
@@ -898,6 +909,9 @@ RESULT eServiceApp::seekTo(pts_t to)
 		return 0;
 	}
 	player->seekTo(int(to/90000));
+#ifdef DREAMOS
+	m_event(this, evSeek);
+#endif
 
 	m_prev_decoder_time = -1;
 	m_decoder_time_valid_state = 0;

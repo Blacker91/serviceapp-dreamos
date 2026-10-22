@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5-dreamos13
+- DreamOS playback events evPlay, evPause and evSeek, like Dream's servicemp3.
+  PlexDream waits for evPlay: number key seeking, resume from the last
+  position and the Plex timeline (watched status) now work with exteplayer3.
+
 ## 0.5-dreamos12
 - "Play with ServiceApp": new choice "files only". Files from disk/NAS are
   played by ServiceApp (exteplayer3), streams stay with Dream's player.

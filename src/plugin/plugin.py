@@ -522,7 +522,7 @@ def _takeOverServiceMP3(reason):
         ret = serviceapp_client.serviceapp.servicemp3_takeover()
         state = _servicemp3State()
         print("[ServiceApp] %s: servicemp3 (4097) takeover %s, mode %s" % (reason,
-            "OK" if ret == 0 else "FAILED", {0: "none", 1: "URLs only", 2: "all"}.get(state, state)))
+            "OK" if ret == 0 else "FAILED", {0: "none", 1: "URLs only", 2: "all", 3: "files only"}.get(state, state)))
     except Exception as e:
         print("[ServiceApp] %s: servicemp3 takeover error: %s" % (reason, e))
 
