@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5-dreamos13
+## 0.5-dreamos14
 - DreamOS playback events evPlay, evPause and evSeek, like Dream's servicemp3.
   PlexDream waits for evPlay: number key seeking, resume from the last
   position and the Plex timeline (watched status) now work with exteplayer3.
