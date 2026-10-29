@@ -1205,7 +1205,9 @@ RESULT eServiceApp::getSubtitleList(std::vector<struct SubtitleTrack> &subtitlel
 		addExternalTrack(subtitlelist, pid++, filename, subtitle_path);
 	}
 	std::vector<std::string> directories, files;
-	if (listDir(dirname, &files, &directories) == 0)
+	/* streams have no directory to look for subtitle files in */
+	bool is_url = subtitle_path.find("://") != std::string::npos && subtitle_path.compare(0, 7, "file://") != 0;
+	if (!is_url && listDir(dirname, &files, &directories) == 0)
 	{
 		std::vector<std::string>::const_iterator it;
 		if ((std::find(directories.begin(), directories.end(), "Subs")) != directories.end())
@@ -1410,7 +1412,20 @@ std::string eServiceApp::getInfoString(int w)
 	case sProvider:
 		return m_ref.path.find("://") != std::string::npos ? "IPTV" : "FILE";
 	case sServiceref:
-		return m_ref.toString();
+	{
+		std::string ref = m_ref.toString();
+#ifdef DREAMOS
+		/* report 5001/5002/5003 as 4097 like Dream's servicemp3: skins and
+		 * picon renderers only map 4097 stream refs to 1_..._png picons */
+		if (m_ref.type == 5001 || m_ref.type == 5002 || m_ref.type == 5003)
+		{
+			size_t colon = ref.find(':');
+			if (colon != std::string::npos)
+				ref = "4097" + ref.substr(colon);
+		}
+#endif
+		return ref;
+	}
 	default:
 		break;
 	}

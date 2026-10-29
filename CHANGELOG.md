@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5-dreamos15
+- Picons in the infobar for 5001/5002 channels with every skin: the reference
+  reported to skins (sServiceref) is 4097, like Dream's player, because skin
+  picon code only maps 4097 stream references to satellite picon names.
+- No more "listDir(http://...) - error" messages: no subtitle file search for streams.
+
 ## 0.5-dreamos14
 - DreamOS playback events evPlay, evPause and evSeek, like Dream's servicemp3.
   PlexDream waits for evPlay: number key seeking, resume from the last
