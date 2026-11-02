@@ -73,6 +73,7 @@ class eServiceApp : public Object,
 
 	bool m_event_started;
 	bool m_paused;
+	bool m_player_started;
 	int m_framerate, m_width, m_height, m_progressive;
 
 	typedef std::map<uint32_t, subtitleMessage> subtitle_pages_map;

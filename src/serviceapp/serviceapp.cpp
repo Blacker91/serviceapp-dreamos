@@ -263,6 +263,7 @@ eServiceApp::eServiceApp(eServiceReference ref):
 	m_resolve_uri("resolve://"),
 	m_event_started(false),
 	m_paused(false),
+	m_player_started(false),
 	m_framerate(-1),
 	m_width(-1),
 	m_height(-1),
@@ -666,6 +667,7 @@ void eServiceApp::gotExtPlayerMessage(int message)
 	{
 		case PlayerMessage::start:
 			eDebug("eServiceApp::gotExtPlayerMessage - start");
+			m_player_started = true;
 			m_event_updated_info_timer->start(1000, true);
 #ifdef HAVE_EPG
 			updateEpgCacheNowNext();
@@ -684,6 +686,16 @@ void eServiceApp::gotExtPlayerMessage(int message)
 			// has already ended, so there is no possibility to do so.
 			// This should be fixed on player's side so it doesn't end
 			// immediately but waits at the end for our input..
+#ifdef DREAMOS
+			/* the stream could not be opened: Dream's InfoBar shows
+			 * "Service not found!" (and reconnects live streams) on evNotFound */
+			if (!m_player_started)
+			{
+				eDebug("eServiceApp::gotExtPlayerMessage - stopped before playback started");
+				m_event(this, evNotFound);
+				break;
+			}
+#endif
 			m_event(this, evEOF);
 			break;
 		case PlayerMessage::pause:
@@ -703,6 +715,10 @@ void eServiceApp::gotExtPlayerMessage(int message)
 		case PlayerMessage::error:
 			eDebug("eServiceApp::gotExtPlayerMessage - error");
 			m_event(this, evUser + 12);
+#ifdef DREAMOS
+			if (!m_player_started)
+				m_event(this, evNotFound);
+#endif
 			break;
 		case PlayerMessage::videoSizeChanged:
 		{

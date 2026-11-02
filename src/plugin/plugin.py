@@ -108,7 +108,8 @@ for key in list(config_serviceapp.exteplayer3.keys()):
     config_serviceapp.exteplayer3[key].aac_swdecoding = ConfigSelection(default="0", choices=[("0", _("off")), ("1", _("To AAC ADTS")), ("2", _("To AAC LATM"))])
     config_serviceapp.exteplayer3[key].eac3_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].ac3_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
-    config_serviceapp.exteplayer3[key].dts_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
+    # DreamOS: the Dreambox audio decoder has no DTS, decode it in software by default
+    config_serviceapp.exteplayer3[key].dts_swdecoding = ConfigBoolean(default=(IMAGEDISTRO == "dreamos"), descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].mp3_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].wma_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].lpcm_injecion = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})

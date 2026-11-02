@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5-dreamos16
+- A stream that cannot be opened (dead link, 403, ...) now shows Dream's
+  "Service not found!" message instead of a black screen; live streams are
+  reconnected by the InfoBar like with Dream's player.
+- DTS software decoding is on by default on DreamOS (the Dreambox has no DTS
+  decoder). Turn it off in the settings to pass DTS to an AV receiver.
+
 ## 0.5-dreamos15
 - Picons in the infobar for 5001/5002 channels with every skin: the reference
   reported to skins (sServiceref) is 4097, like Dream's player, because skin
