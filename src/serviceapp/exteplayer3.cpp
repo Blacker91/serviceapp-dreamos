@@ -2,6 +2,9 @@
 
 #include <lib/base/eerror.h>
 #include "exteplayer3.h"
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 const std::string  EXT3_SW_DECODING_AAC            = "aac_swdec";
 const std::string  EXT3_SW_DECODING_AC3            = "ac3_swdec";
@@ -229,6 +232,29 @@ std::vector<std::string> ExtEplayer3::buildCommand()
                         }
                 }
 	}
+#ifdef DREAMOS
+	/* graphic subtitles (PGS, DVB, XSUB): exteplayer3 writes the pictures as PNG
+	 * files there, the plugin overlay shows them. Start with an empty directory. */
+	mkdir(EXT3_GRAPHIC_SUB_DIR, 0755);
+	DIR *d = opendir(EXT3_GRAPHIC_SUB_DIR);
+	if (d)
+	{
+		struct dirent *e;
+		while ((e = readdir(d)) != NULL)
+		{
+			std::string n(e->d_name);
+			if (n.size() > 4 && (n.compare(n.size() - 4, 4, ".png") == 0 || n.compare(n.size() - 5, 5, ".part") == 0))
+				unlink((std::string(EXT3_GRAPHIC_SUB_DIR) + "/" + n).c_str());
+		}
+		closedir(d);
+	}
+	args.push_back("-G");
+	args.push_back(EXT3_GRAPHIC_SUB_DIR);
+	args.push_back("-W");
+	args.push_back("1280");
+	args.push_back("-H");
+	args.push_back("720");
+#endif
 	return args;
 }
 int ExtEplayer3::start(eMainloop *context)
@@ -379,10 +405,41 @@ void ExtEplayer3::handleJsonOutput(cJSON *json)
 	else if (!strcmp(key, "s_a"))
 	{
 		subtitleMessage s;
-		s.start_ms = cJSON_GetObjectItem(value, "s")->valueint;
-		s.end_ms = cJSON_GetObjectItem(value, "e")->valueint;
+		cJSON *it = cJSON_GetObjectItem(value, "s");
+		if (!it)
+			return;
+		s.start_ms = it->valueint;
+		cJSON *rects = cJSON_GetObjectItem(value, "r");
+		cJSON *end = cJSON_GetObjectItem(value, "e");
+		if (end && end->type == cJSON_Number)
+			s.end_ms = end->valueint;
+		else
+			s.end_ms = s.start_ms + 30000;  /* graphic page until the next one (at most 30 s) */
+		if (s.end_ms < s.start_ms)
+			s.end_ms = s.start_ms;
 		s.duration_ms = s.end_ms - s.start_ms;
-		s.text = cJSON_GetObjectItem(value, "t")->valuestring;
+		cJSON *text = cJSON_GetObjectItem(value, "t");
+		if (text && text->valuestring)
+			s.text = text->valuestring;
+		if (rects)
+		{
+			/* graphic subtitle: pictures written by exteplayer3 into the -G directory */
+			s.graphic = true;
+			for (int i = 0; i < cJSON_GetArraySize(rects); i++)
+			{
+				cJSON *r = cJSON_GetArrayItem(rects, i);
+				cJSON *f = cJSON_GetObjectItem(r, "f");
+				if (!f || !f->valuestring)
+					continue;
+				subtitleImage img;
+				img.x = cJSON_GetObjectItem(r, "x") ? cJSON_GetObjectItem(r, "x")->valueint : 0;
+				img.y = cJSON_GetObjectItem(r, "y") ? cJSON_GetObjectItem(r, "y")->valueint : 0;
+				img.w = cJSON_GetObjectItem(r, "w") ? cJSON_GetObjectItem(r, "w")->valueint : 0;
+				img.h = cJSON_GetObjectItem(r, "h") ? cJSON_GetObjectItem(r, "h")->valueint : 0;
+				img.file = std::string(EXT3_GRAPHIC_SUB_DIR) + "/" + f->valuestring;
+				s.images.push_back(img);
+			}
+		}
 		recvSubtitleMessage(s);
 	}
 	else if (!strcmp(key, "PLAYBACK_LENGTH"))

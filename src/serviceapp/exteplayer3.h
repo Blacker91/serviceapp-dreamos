@@ -27,6 +27,7 @@ extern const std::string EXT3_PLAYBACK_MPEGTS_PROGRAM;
 extern const std::string EXT3_RTMP_PROTOCOL;
 extern const std::string EXT3_NICE_VALUE;
 extern const std::string EXT3_FFMPEG_SETTING_STRING;
+#define EXT3_GRAPHIC_SUB_DIR "/tmp/serviceapp_subs"
 extern const std::string EXT3_ARG_LCASE_B;
 extern const std::string EXT3_ARG_5;
 extern const std::string EXT3_ARG_6;

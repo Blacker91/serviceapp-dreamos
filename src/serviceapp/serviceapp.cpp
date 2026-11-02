@@ -515,6 +515,10 @@ bool eServiceApp::isExternalTrack(const SubtitleTrack &track)
 	return (track.type == 2 && track.page_number == 4);
 }
 
+#ifdef DREAMOS
+static void dreamosSinkShowGraphic(const subtitleMessage &msg, int timeout_ms);
+#endif
+
 void eServiceApp::pullSubtitles()
 {
 	std::queue<subtitleMessage> pulled;
@@ -523,6 +527,29 @@ void eServiceApp::pullSubtitles()
 	while (!pulled.empty())
 	{
 		subtitleMessage sub = pulled.front();
+		if (sub.graphic)
+		{
+			/* a graphic page (or an empty one = clear) replaces the shown one:
+			 * end earlier pages that are still open at its start */
+			std::vector<subtitleMessage> cut;
+			for (subtitle_pages_map::iterator it = m_embedded_subtitle_pages.begin(); it != m_embedded_subtitle_pages.end();)
+			{
+				if (it->second.graphic && it->second.start_ms < sub.start_ms && it->second.end_ms > sub.start_ms)
+				{
+					subtitleMessage m = it->second;
+					m.end_ms = sub.start_ms;
+					m.duration_ms = m.end_ms - m.start_ms;
+					cut.push_back(m);
+					if (m_prev_subtitle_message == &(it->second))
+						m_prev_subtitle_message = NULL;
+					m_embedded_subtitle_pages.erase(it++);
+				}
+				else
+					++it;
+			}
+			for (size_t k = 0; k < cut.size(); k++)
+				m_embedded_subtitle_pages.insert(subtitle_pages_map_pair(cut[k].end_ms, cut[k]));
+		}
 		m_embedded_subtitle_pages.insert(subtitle_pages_map_pair(sub.end_ms, sub));
 		pulled.pop();
 	}
@@ -618,6 +645,14 @@ void eServiceApp::pushSubtitles()
 			next_timer = 30;
 			goto exit;
 		}
+#ifdef DREAMOS
+		if (current->second.graphic && m_subtitle_widget && !m_paused)
+		{
+			m_prev_subtitle_message = &(current->second);
+			dreamosSinkShowGraphic(current->second, end_ms - decoder_ms);
+			continue;
+		}
+#endif
 		if (m_subtitle_widget && !m_paused)
 		{
 			//eDebug("eServiceApp::pushSubtitles - current sub actual, show!");
@@ -1757,8 +1792,16 @@ public:
 	bool active;
 	unsigned int seq;
 	std::string text;
+	std::vector<subtitleImage> images;
 	int64_t expire_ms;
 	DreamOSSubtitleSink(): active(false), seq(0), expire_ms(0) {}
+	void setImages(const std::vector<subtitleImage> &imgs, int timeout_ms)
+	{
+		text.clear();
+		images = imgs;
+		expire_ms = now_ms() + (timeout_ms > 0 ? timeout_ms : 1);
+		seq++;
+	}
 	static int64_t now_ms()
 	{
 		struct timespec ts;
@@ -1775,6 +1818,7 @@ public:
 			t += it->m_pango_line;
 		}
 		text = t;
+		images.clear();
 		expire_ms = now_ms() + (page.m_timeout > 0 ? page.m_timeout : 3000);
 		seq++;
 	}
@@ -1782,17 +1826,27 @@ public:
 	{
 		active = false;
 		text.clear();
+		images.clear();
 		expire_ms = 0;
 		seq++;
 	}
 	void clear()
 	{
 		text.clear();
+		images.clear();
 		expire_ms = 0;
 		seq++;
 	}
 };
 static DreamOSSubtitleSink g_dreamosSubtitleSink;
+
+static void dreamosSinkShowGraphic(const subtitleMessage &msg, int timeout_ms)
+{
+	if (msg.images.empty())
+		g_dreamosSubtitleSink.clear();
+	else
+		g_dreamosSubtitleSink.setImages(msg.images, timeout_ms);
+}
 
 RESULT eServiceApp::enableSubtitles(eWidget *parent, unsigned int i)
 {
@@ -2004,10 +2058,27 @@ serviceapp_set_setting(PyObject *self, PyObject *args)
 #ifdef DREAMOS
 static PyObject *subtitle_get(PyObject *self, PyObject *args)
 {
-	/* (active, seq, text), text is empty when nothing is shown */
+	/* (active, seq, text, images): text is empty when nothing is shown, images is
+	 * a list of (x, y, w, h, png path) of a graphic subtitle (1280x720 window) */
 	const DreamOSSubtitleSink &s = g_dreamosSubtitleSink;
-	bool visible = s.active && !s.text.empty() && DreamOSSubtitleSink::now_ms() < s.expire_ms;
-	return Py_BuildValue("(iIs)", (int)s.active, s.seq, visible ? s.text.c_str() : "");
+	bool visible = s.active && DreamOSSubtitleSink::now_ms() < s.expire_ms;
+	PyObject *imgs = PyList_New(0);
+	if (visible)
+	{
+		for (size_t i = 0; i < s.images.size(); i++)
+		{
+			const subtitleImage &im = s.images[i];
+			PyObject *t = Py_BuildValue("(iiiis)", im.x, im.y, im.w, im.h, im.file.c_str());
+			if (t)
+			{
+				PyList_Append(imgs, t);
+				Py_DECREF(t);
+			}
+		}
+	}
+	PyObject *ret = Py_BuildValue("(iIsO)", (int)s.active, s.seq, visible ? s.text.c_str() : "", imgs);
+	Py_DECREF(imgs);
+	return ret;
 }
 
 static PyObject *servicemp3_takeover(PyObject *self, PyObject *args)

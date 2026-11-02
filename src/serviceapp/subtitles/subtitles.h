@@ -21,13 +21,24 @@ struct subtitleStream
     subtitleStream(): id(-1){};
 };
 
+/* one picture of a graphic subtitle (PGS, DVB, XSUB), position in the
+ * exteplayer3 subtitle window (-W x -H) */
+struct subtitleImage
+{
+    int x, y, w, h;
+    std::string file;
+    subtitleImage(): x(0), y(0), w(0), h(0){};
+};
+
 struct subtitleMessage
 {
     uint32_t start_ms;
     uint32_t duration_ms;
     uint32_t end_ms;
     std::string text;
-    subtitleMessage(): start_ms(0), duration_ms(0), end_ms(0){};
+    bool graphic;                       /* graphic subtitle, images may be empty (= clear) */
+    std::vector<subtitleImage> images;
+    subtitleMessage(): start_ms(0), duration_ms(0), end_ms(0), graphic(false){};
 };
 
 // endtime, message

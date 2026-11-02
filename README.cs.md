@@ -26,7 +26,7 @@ Balíčky jsou zvlášť pro mipsel a armhf, instalátor vybere sám. DreamOS 2.
 - služba 5002 (exteplayer3): HLS, DASH, klíče CENC DRM, oddělený zvuk (YouTube)
 - pauza / posun v InfoBaru u videí (ne u živého vysílání)
 - EPG u služeb 5002
-- titulky (textové stopy ve videu, externí .srt, WebVTT)
+- titulky: textové stopy ve videu, externí .srt, WebVTT, grafické titulky (PGS, DVB)
 - volitelně: náhrada Dreamova servicemp3 (4097) pro streamy, soubory, nebo obojí
 
 ## Instalace

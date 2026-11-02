@@ -26,7 +26,7 @@ Packages are separate for mipsel and armhf, the installer picks the right one. D
 - service type 5002 (exteplayer3): HLS, DASH, CENC DRM keys, separate audio (YouTube)
 - pause / seek in the InfoBar for videos (not in live streams)
 - EPG for 5002 services
-- subtitles (embedded text tracks, external .srt, WebVTT)
+- subtitles: embedded text tracks, external .srt, WebVTT, graphic subtitles (PGS, DVB)
 - optional: replace Dream's servicemp3 (4097) for streams, files, or both
 
 ## Install

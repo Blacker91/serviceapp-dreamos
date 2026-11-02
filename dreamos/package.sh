@@ -24,7 +24,7 @@ Version: $VER
 Architecture: $ARCH
 Maintainer: Blacker91
 Installed-Size: $(du -sk "$P" --exclude=DEBIAN | cut -f1)
-Depends: enigma2 (>= 4.3.3r3-r0.0), enigma2 (<< 4.3.3r4), exteplayer3-dreamos (>= 183-dreamos9), libssl1.0.0, libcrypto1.0.0, libstdc++6, python-core
+Depends: enigma2 (>= 4.3.3r3-r0.0), enigma2 (<< 4.3.3r4), exteplayer3-dreamos (>= 184-dreamos3), libssl1.0.0, libcrypto1.0.0, libstdc++6, python-core
 Section: extra
 Priority: optional
 Homepage: https://github.com/Blacker91/serviceapp-dreamos

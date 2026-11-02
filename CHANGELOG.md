@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5-dreamos17
+- Graphic subtitles (PGS from Blu-ray rips, DVB subtitles, XSUB) in the
+  ServiceApp overlay. Needs exteplayer3-dreamos 184-dreamos3.
+
 ## 0.5-dreamos16
 - A stream that cannot be opened (dead link, 403, ...) now shows Dream's
   "Service not found!" message instead of a black screen; live streams are

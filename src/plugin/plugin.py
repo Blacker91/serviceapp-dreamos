@@ -631,6 +631,8 @@ def _plainSubtitleText(text):
 class ServiceAppSubtitles(Screen):
     OUTLINE = ((-1, -1), (1, -1), (-1, 1), (1, 1), (0, -1), (0, 1), (-1, 0), (1, 0))
     BACKGROUND = {"black": "#000000", "semi": "#50000000"}
+    MAX_IMAGES = 8
+    SUB_WINDOW = (1280, 720)   # exteplayer3 -W / -H
 
     def __init__(self, session):
         from enigma import getDesktop
@@ -661,6 +663,10 @@ class ServiceAppSubtitles(Screen):
                                          "bottom", "#000000", "#ff000000", 1, 1))
             widgets.append(widget % (("text",) + box + ("bottom", cfg.color.value, "#ff000000", 1, 2)))
             self.outlines = len(self.OUTLINE)
+        # graphic subtitles (PGS, DVB): pictures from exteplayer3, see _showImages()
+        self._w, self._h = w, h
+        for i in range(self.MAX_IMAGES):
+            widgets.append('<widget name="img%d" position="0,0" size="1,1" alphatest="blend" zPosition="3" />' % i)
         self.skin = '<screen name="ServiceAppSubtitles" position="0,0" size="%d,%d" flags="wfNoBorder" ' \
                     'backgroundColor="#ff000000" zPosition="-1">%s</screen>' % (w, h, "".join(widgets))
         Screen.__init__(self, session)
@@ -669,6 +675,11 @@ class ServiceAppSubtitles(Screen):
             self["background"] = Label("")
         for i in range(self.outlines):
             self["outline%d" % i] = Label("")
+        from Components.Pixmap import Pixmap
+        for i in range(self.MAX_IMAGES):
+            self["img%d" % i] = Pixmap()
+        self._images = []
+        self.onLayoutFinish.append(self._initImages)
         self._last = None
         self._hold_until = None
         from enigma import eTimer
@@ -694,11 +705,70 @@ class ServiceAppSubtitles(Screen):
             self[name].instance.resize(eSize(w, h))
             self[name].instance.move(pos)
 
+    def _initImages(self):
+        for i in range(self.MAX_IMAGES):
+            inst = self["img%d" % i].instance
+            if inst is not None:
+                try:
+                    inst.setScale(1)
+                except Exception:
+                    pass
+                inst.hide()
+
+    def _removeFiles(self, keep):
+        for f in self._images:
+            if f not in keep:
+                try:
+                    os.remove(f)
+                except OSError:
+                    pass
+
+    def _showImages(self, images):
+        # images: (x, y, w, h, png) in the exteplayer3 subtitle window
+        from enigma import eSize, ePoint
+        files = [i[4] for i in images]
+        if files == self._images:
+            return
+        self._removeFiles(files)
+        self._images = files
+        sx = self._w / float(self.SUB_WINDOW[0])
+        sy = self._h / float(self.SUB_WINDOW[1])
+        for name in ["text", "background"] + ["outline%d" % i for i in range(self.outlines)]:
+            if name in self:
+                self[name].setText("")
+                if self[name].instance:
+                    self[name].instance.hide()
+        self._last = None
+        for i in range(self.MAX_IMAGES):
+            inst = self["img%d" % i].instance
+            if inst is None:
+                continue
+            if i < len(images):
+                x, y, w, h, f = images[i]
+                inst.move(ePoint(int(x * sx), int(y * sy)))
+                inst.resize(eSize(max(1, int(w * sx)), max(1, int(h * sy))))
+                inst.setPixmapFromFile(f)
+                inst.show()
+            else:
+                inst.hide()
+        if images:
+            self.show()
+        else:
+            self.hide()
+
     def _poll(self):
         try:
-            active, seq, text = serviceapp_client.serviceapp.subtitle_get()
+            res = serviceapp_client.serviceapp.subtitle_get()
         except Exception:
             return
+        active, seq, text = res[:3]
+        images = res[3] if len(res) > 3 else []
+        if images or (self._images and not text):
+            self._showImages(images)
+            return
+        for name in ["text", "background"] + ["outline%d" % i for i in range(self.outlines)]:
+            if name in self and self[name].instance:
+                self[name].instance.show()
         text = _plainSubtitleText(text) if text else ""
         if text:
             self._hold_until = None
