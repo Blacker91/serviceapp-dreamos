@@ -1,0 +1,15 @@
+Origin: Blacker91
+Label: serviceapp-dreamos
+Suite: dreamos
+Date: Tue, 03 Nov 2026 15:46:11 UTC
+Architectures: mipsel armhf arm64
+Description: ServiceApp and exteplayer3 for DreamOS
+MD5Sum:
+ 1192a6d4610f288ba6a276e6f619be0b 4424 Packages
+ 42b18b47d13515833a8d34ae96f69a34 1295 Packages.gz
+SHA1:
+ 46365b6e934c2debc47038dc581332ac699b8f41 4424 Packages
+ 1b4c1c4be2154baed02815d94f94c0eb6db63ce9 1295 Packages.gz
+SHA256:
+ a5da6f1b808d9ab0fd575099041178a3a4bd23a1d3f6ab91d917284bfa5f7aef 4424 Packages
+ 84479cffb31f9cd8caae40fafff48ac95e17047f2d56da229516466a1ec8dd62 1295 Packages.gz
