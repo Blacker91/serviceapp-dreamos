@@ -3,6 +3,10 @@
 ## 0.5-dreamos17
 - Graphic subtitles (PGS from Blu-ray rips, DVB subtitles, XSUB) in the
   ServiceApp overlay. Needs exteplayer3-dreamos 184-dreamos3.
+- Experimental package for Dreambox One / Two (DreamOS 2.6, enigma2 4.5.1r11,
+  `_arm64`), not tested on a box yet. Built against the enigma2 4.3.3r3 headers
+  changed to the 4.5.1r11 layout read from the One image (getLength64,
+  eServiceReference, iSubtitleTrackInfo). No exteplayer3 for the One yet.
 
 ## 0.5-dreamos16
 - A stream that cannot be opened (dead link, 403, ...) now shows Dream's

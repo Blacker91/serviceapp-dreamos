@@ -4,12 +4,15 @@
 #
 #   dreamos/fetch-sysroot.sh mipsel      DM520 / DM525
 #   dreamos/fetch-sysroot.sh arm         DM900 / DM920
+#   dreamos/fetch-sysroot.sh aarch64     Dreambox One / Two (DreamOS 2.6, needs
+#                                        ONE_IMAGE=..., see fetch-sysroot-aarch64.sh)
 #
 #   DEBS_DIR=dir   use already downloaded .deb files instead of the feed
 #   E2_BINARY=f    enigma2 binary used for the symbol check (e.g. /usr/bin/enigma2
 #                  copied from your box); default: enigma2 package from the feed
 set -euo pipefail
 ARCH="${1:-mipsel}"
+[ "$ARCH" = aarch64 ] && exec bash "$(dirname "$0")/fetch-sysroot-aarch64.sh"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="${WORK:-$ROOT/.work}"
 OEVER="${OEVER:-2.5}"
@@ -17,7 +20,7 @@ FEED="http://dreamboxupdate.com/opendreambox/$OEVER/unstable/r0"
 case "$ARCH" in
   mipsel) MACHINE=dm520; SUBDIRS="all dm520 mips32el" ;;
   arm)    MACHINE=dm900; SUBDIRS="all dm900 cortexa15hf-neon-vfpv4" ;;
-  *) echo "usage: $0 mipsel|arm" >&2; exit 1 ;;
+  *) echo "usage: $0 mipsel|arm|aarch64" >&2; exit 1 ;;
 esac
 # enigma2-dev headers are architecture independent; 4.3.3r3 is taken from the
 # DM520 feed for both architectures (it matches the released 2.5 images)

@@ -1,11 +1,13 @@
 #!/bin/bash
-# Build serviceapp.so for DreamOS 2.5 (enigma2 4.3.3r3, Python 2.7).
+# Build serviceapp.so for DreamOS 2.5 (enigma2 4.3.3r3) and DreamOS 2.6
+# (enigma2 4.5.1r11), Python 2.7.
 #
-#   dreamos/build.sh mipsel      DM520 / DM525
-#   dreamos/build.sh arm         DM900 / DM920
+#   dreamos/build.sh mipsel      DM520 / DM525            (DreamOS 2.5)
+#   dreamos/build.sh arm         DM900 / DM920            (DreamOS 2.5)
+#   dreamos/build.sh aarch64     Dreambox One / Two       (DreamOS 2.6)
 #
 # Needs: dreamos/fetch-sysroot.sh <arch> first, and on the build host
-#   g++-12-mipsel-linux-gnu / g++-12-arm-linux-gnueabihf, cmake, git,
+#   g++-12-mipsel-linux-gnu / g++-12-arm-linux-gnueabihf / g++-12-aarch64-linux-gnu, cmake, git,
 #   libboost-dev (headers only), python3
 set -euo pipefail
 ARCH="${1:-mipsel}"
@@ -18,11 +20,17 @@ UCHARDET_REV="4e685757780cb3c652fc6c9ec759f62888969ec9"
 case "$ARCH" in
   mipsel) T=mipsel-linux-gnu;    TRIPLE=mipsel-oe-linux;     CPU="-march=mips32 -mabi=32 -mhard-float -mfp32 -mnan=legacy -mno-mips16" ;;
   arm)    T=arm-linux-gnueabihf; TRIPLE=arm-oe-linux-gnueabi; CPU="-mcpu=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -mthumb" ;;
-  *) echo "usage: $0 mipsel|arm" >&2; exit 1 ;;
+  aarch64) T=aarch64-linux-gnu;  TRIPLE=aarch64-linux-gnu;   CPU="-march=armv8-a -mtune=cortex-a53 -mno-outline-atomics" ;;  # no gcc 12 libgcc helpers
+  *) echo "usage: $0 mipsel|arm|aarch64" >&2; exit 1 ;;
 esac
 [ -d "$SR/usr/include/enigma2" ] || { echo "run dreamos/fetch-sysroot.sh $ARCH first" >&2; exit 1; }
 GCCINC="/usr/lib/gcc-cross/$T/12/include"
-GCCLIB="$SR/usr/lib/$TRIPLE/5.3.0"
+if [ "$ARCH" = aarch64 ]; then
+  # DreamOS 2.6: glibc 2.25, libstdc++ 6.4 (headers: see fetch-sysroot-aarch64.sh)
+  GCCLIB="$SR/usr/lib/gcc/$TRIPLE/6"; CXXINC="$SR/usr/include/c++/6"; CXXARCH="$CXXINC/$TRIPLE"; E2DEF="-DDREAMOS_26"
+else
+  GCCLIB="$SR/usr/lib/$TRIPLE/5.3.0"; CXXINC="$SR/usr/include/c++/5.3.0"; CXXARCH="$CXXINC/$TRIPLE"; E2DEF=""
+fi
 
 # Compile only against the box's glibc 2.23 / libstdc++ 5.3 headers, never the host's.
 mkdir -p "$D/tc/boost" "$O"
@@ -35,8 +43,8 @@ exec $T-gcc-12 -nostdinc $COMMON "\$@"
 EOF
 cat > "$D/tc/cxx" <<EOF
 #!/bin/sh
-exec $T-g++-12 -nostdinc -nostdinc++ -isystem $SR/usr/include/c++/5.3.0 -isystem $SR/usr/include/c++/5.3.0/$TRIPLE \
- -isystem $SR/usr/include/c++/5.3.0/backward $COMMON -std=gnu++14 -I$SR/usr/include/enigma2 \
+exec $T-g++-12 -nostdinc -nostdinc++ -isystem $CXXINC -isystem $CXXARCH \
+ -isystem $CXXINC/backward $COMMON -std=gnu++14 -I$SR/usr/include/enigma2 \
  -I$SR/usr/include/sigc++-2.0 -I$SR/usr/lib/sigc++-2.0/include -idirafter $D/tc/boost "\$@"
 EOF
 chmod +x "$D/tc/cc" "$D/tc/cxx"
@@ -56,7 +64,7 @@ fi
 
 # serviceapp.so
 S="$ROOT/src/serviceapp"
-FLAGS="-Os -Wall -Wno-unused -DDEBUG -DDREAMOS -DHAVE_EPG -I$S -idirafter $ROOT/src/compat-dreamos -I$UCH/inst/include"
+FLAGS="-Os -Wall -Wno-unused -DDEBUG -DDREAMOS $E2DEF -DHAVE_EPG -I$S -idirafter $ROOT/src/compat-dreamos -I$UCH/inst/include"
 for f in serviceapp.cpp dreamos_servicecenter.cpp extplayer.cpp scriptrun.cpp myconsole.cpp wrappers.cpp m3u8.cpp \
          gstplayer.cpp exteplayer3.cpp common.cpp subtitles/subtitles.cpp subtitles/subrip.cpp; do
   "$D/tc/cxx" $FLAGS -include Python.h -c "$S/$f" -o "$O/$(basename "$f" .cpp).o"

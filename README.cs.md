@@ -20,7 +20,14 @@ OpenPLi / OpenATV. Doplňky jako ArchivCZSK tak můžou exteplayer3 používat i
 | DM520, DM525 | mipsel |
 | DM900, DM920 | armhf |
 
-Balíčky jsou zvlášť pro mipsel a armhf, instalátor vybere sám. DreamOS 2.6 (Dreambox One/Two) podporovaný není.
+Balíčky jsou zvlášť pro mipsel a armhf, instalátor vybere sám.
+
+**Dreambox One / Two (DreamOS 2.6, enigma2 4.5.1r11)** – zkušební balíček `_arm64`,
+na boxu zatím nevyzkoušený a není v instalátoru. exteplayer3 pro One zatím není
+(potřebuje Amlogic výstup obrazu), takže ServiceApp nemá čím přehrávat, dokud na
+boxu není exteplayer3 pro One v `/usr/bin`. Build: `dreamos/fetch-sysroot.sh aarch64`
+(`ONE_IMAGE=` image Dreamboxu One) a `dreamos/build.sh aarch64`; rozdíly mezi
+enigma2 4.3.3r3 a 4.5.1r11 jsou popsané v `dreamos/e2-451-headers.py`.
 
 ## Co umí
 - služba 5002 (exteplayer3): HLS, DASH, klíče CENC DRM, oddělený zvuk (YouTube)

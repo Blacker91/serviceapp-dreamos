@@ -305,6 +305,10 @@ class eStaticServiceAppInfo : public iStaticServiceInformation
 public:
 	RESULT getName(const eServiceReference &ref, std::string &name);
 	int getLength(const eServiceReference &ref);
+#ifdef DREAMOS_26
+	// enigma2 4.5.1r11 (DreamOS 2.6) added this virtual after getLength
+	int64_t getLength64(const eServiceReference &ref) { return getLength(ref); }
+#endif
 	int getInfo(const eServiceReference &ref, int w);
 	int isPlayable(const eServiceReference &ref, const eServiceReference &ignore, bool simulate) { return 1; }
 	long long getFileSize(const eServiceReference &ref);

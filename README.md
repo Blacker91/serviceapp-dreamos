@@ -20,7 +20,15 @@ OpenPLi / OpenATV, so plugins like ArchivCZSK can use exteplayer3 on a Dreambox.
 | DM520, DM525 | mipsel |
 | DM900, DM920 | armhf |
 
-Packages are separate for mipsel and armhf, the installer picks the right one. DreamOS 2.6 (Dreambox One/Two) is not supported.
+Packages are separate for mipsel and armhf, the installer picks the right one.
+
+**Dreambox One / Two (DreamOS 2.6, enigma2 4.5.1r11)** – experimental `_arm64` package,
+not tested on a box yet and not in the installer. There is no exteplayer3 for the One
+yet (it needs the Amlogic video output), so ServiceApp has nothing to play with
+unless an exteplayer3 for the One is installed in `/usr/bin`. Built with
+`dreamos/fetch-sysroot.sh aarch64` (`ONE_IMAGE=` a Dreambox One image) and
+`dreamos/build.sh aarch64`; the differences between enigma2 4.3.3r3 and 4.5.1r11
+are listed in `dreamos/e2-451-headers.py`.
 
 ## Features
 - service type 5002 (exteplayer3): HLS, DASH, CENC DRM keys, separate audio (YouTube)
