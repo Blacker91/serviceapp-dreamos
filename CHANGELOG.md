@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5-dreamos18
+- Live streams (e.g. Tvheadend through ArchivCZSK) that end by themselves,
+  because the server or proxy closed the connection, are reconnected instead
+  of leaving a black screen (up to 5 attempts in a row, log
+  "[ServiceApp] live stream ended, reconnect n/5"). Dream's InfoBar only does
+  this for references flagged as live, which plugin bouquets are not.
+  Videos with a known length end normally as before.
+
 ## 0.5-dreamos17
 - Graphic subtitles (PGS from Blu-ray rips, DVB subtitles, XSUB) in the
   ServiceApp overlay. Needs exteplayer3-dreamos 184-dreamos3.

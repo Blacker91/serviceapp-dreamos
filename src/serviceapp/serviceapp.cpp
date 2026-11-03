@@ -290,6 +290,13 @@ eServiceApp::eServiceApp(eServiceReference ref):
 	CONNECT(m_nownext_timer->timeout, eServiceApp::updateEpgCacheNowNext);
 #endif
 	CONNECT(player->gotPlayerMessage, eServiceApp::gotExtPlayerMessage);
+#ifdef DREAMOS
+	m_live_reconnects = 0;
+	m_player_start_time = 0;
+	m_stopping = false;
+	m_live_reconnect_timer = eTimer::create(eApp);
+	CONNECT(m_live_reconnect_timer->timeout, eServiceApp::liveReconnect);
+#endif
 };
 
 eServiceApp::~eServiceApp()
@@ -703,6 +710,9 @@ void eServiceApp::gotExtPlayerMessage(int message)
 		case PlayerMessage::start:
 			eDebug("eServiceApp::gotExtPlayerMessage - start");
 			m_player_started = true;
+#ifdef DREAMOS
+			m_player_start_time = ::time(0);
+#endif
 			m_event_updated_info_timer->start(1000, true);
 #ifdef HAVE_EPG
 			updateEpgCacheNowNext();
@@ -724,6 +734,23 @@ void eServiceApp::gotExtPlayerMessage(int message)
 #ifdef DREAMOS
 			/* the stream could not be opened: Dream's InfoBar shows
 			 * "Service not found!" (and reconnects live streams) on evNotFound */
+			if (!m_stopping && isLiveStream())
+			{
+				/* short runs and failed attempts count, a stream that played
+				 * for a while starts the count again */
+				if (m_player_started && ::time(0) - m_player_start_time >= 30)
+					m_live_reconnects = 0;
+				if (m_live_reconnects < 5)
+				{
+					m_live_reconnects++;
+					eDebug("[ServiceApp] live stream ended, reconnect %d/5", m_live_reconnects);
+					m_live_reconnect_timer->start(m_live_reconnects == 1 ? 500 : 3000, true);
+					break;
+				}
+				eDebug("[ServiceApp] live stream: giving up after 5 reconnects");
+				m_event(this, evNotFound);
+				break;
+			}
 			if (!m_player_started)
 			{
 				eDebug("eServiceApp::gotExtPlayerMessage - stopped before playback started");
@@ -896,10 +923,56 @@ RESULT eServiceApp::start()
 RESULT eServiceApp::stop()
 {
 	eDebug("eServiceApp::stop");
+#ifdef DREAMOS
+	m_stopping = true;
+	if (m_live_reconnect_timer) m_live_reconnect_timer->stop();
+#endif
 	if (m_resolver) m_resolver->stop();
 	player->stop();
 	return 0;
 }
+
+#ifdef DREAMOS
+bool eServiceApp::isLiveStream()
+{
+	/* network stream without a length; a stream that never started is live
+	 * only when we are already reconnecting it */
+	const std::string &p = m_ref.path;
+	bool url = p.find("://") != std::string::npos && p.compare(0, 7, "file://") != 0;
+	if (!url)
+		return false;
+	if (!m_player_started)
+		return m_live_reconnects > 0;
+	return player->lengthMs() <= 0;
+}
+
+void eServiceApp::liveReconnect()
+{
+	if (m_stopping)
+		return;
+	eDebug("[ServiceApp] live stream: reconnecting %s", m_ref.path.c_str());
+	m_subtitle_sync_timer->stop();
+	m_selected_subtitle_track = NULL;
+	m_prev_subtitle_message = NULL;
+	m_subtitle_pages = NULL;
+	m_embedded_subtitle_pages.clear();
+	if (m_resolver)
+	{
+		m_resolver->stop();
+		delete m_resolver;
+		m_resolver = NULL;
+	}
+	player->stop();
+	delete player;
+	delete extplayer;
+	extplayer = createPlayer(m_ref, getHeaders(m_ref.path));
+	player = new PlayerBackend(extplayer);
+	CONNECT(player->gotPlayerMessage, eServiceApp::gotExtPlayerMessage);
+	m_player_started = false;
+	m_paused = false;
+	start();
+}
+#endif
 
 // __iPausableService
 RESULT eServiceApp::pause()

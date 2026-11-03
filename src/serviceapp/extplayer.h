@@ -321,6 +321,8 @@ public:
 		pthread_mutex_init(&mWaitForStopMutex, NULL);
 		pthread_cond_init(&mWaitForStopCond, NULL);
 	}
+	/* length reported by the player, 0 = unknown (live stream) */
+	int lengthMs() const { return mLengthInMs; }
 	~PlayerBackend()
 	{
 		if (pErrorMessage != NULL)

@@ -106,6 +106,17 @@ class eServiceApp : public Object,
 	void signalEventUpdatedInfo();
 	void urlResolved(int success);
 
+#ifdef DREAMOS
+	/* a live stream that ends by itself (server closed the connection) is
+	 * reconnected instead of leaving a black screen; Dream's InfoBar only
+	 * reconnects references flagged isLive, which plugin bouquets are not */
+	ePtr<eTimer> m_live_reconnect_timer;
+	int m_live_reconnects;
+	time_t m_player_start_time;
+	bool m_stopping;
+	bool isLiveStream();
+	void liveReconnect();
+#endif
 #ifdef HAVE_EPG
 	ePtr<eTimer> m_nownext_timer;
 	ePtr<eServiceEvent> m_event_now, m_event_next;
