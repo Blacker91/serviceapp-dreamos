@@ -42,7 +42,18 @@ On the box (ssh/telnet):
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
 ```
-It installs ServiceApp and exteplayer3 (with ffmpeg) and restarts enigma2.
+It installs ServiceApp and exteplayer3 (with ffmpeg), adds the apt feed and restarts enigma2.
+
+## Updates
+The installer adds this feed to `/etc/apt/sources.list.d/serviceapp-dreamos.list`:
+```
+deb [trusted=yes] https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/feed ./
+```
+New versions then come with the normal software update:
+```sh
+apt-get update && apt-get upgrade
+```
+Running the installer again also updates.
 
 Needs `curl` (usually part of DreamOS). The BusyBox `wget` of DreamOS cannot download from GitHub.
 If `curl` is missing: `apt-get update && apt-get install curl`.
@@ -54,7 +65,7 @@ Manually: download the `.deb` files for your box (`_mipsel` for DM520/DM525, `_a
 dpkg -i exteplayer3-dreamos_*.deb enigma2-plugin-systemplugins-serviceapp-dreamos_*.deb
 systemctl restart enigma2
 ```
-Do not run `apt-get -f install` afterwards, the packages are not in Dream's feed and apt would remove them.
+For updates via apt, add the feed line from [Updates](#updates) to `/etc/apt/sources.list.d/serviceapp-dreamos.list`.
 
 ## Settings
 Menu → Plugins → ServiceApp.

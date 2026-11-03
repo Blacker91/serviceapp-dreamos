@@ -41,7 +41,18 @@ Na boxu (ssh/telnet):
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
 ```
-Nainstaluje ServiceApp a exteplayer3 (včetně ffmpeg) a restartuje enigmu.
+Nainstaluje ServiceApp a exteplayer3 (včetně ffmpeg), přidá apt feed a restartuje enigmu.
+
+## Aktualizace
+Instalátor přidá do `/etc/apt/sources.list.d/serviceapp-dreamos.list` tento feed:
+```
+deb [trusted=yes] https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/feed ./
+```
+Nové verze pak přijdou s běžnou aktualizací softwaru:
+```sh
+apt-get update && apt-get upgrade
+```
+Aktualizovat jde i opětovným spuštěním instalátoru.
 
 Potřebuje `curl` (v DreamOS obvykle je). `wget` z BusyBoxu v DreamOS z GitHubu stahovat neumí.
 Kdyby `curl` chyběl: `apt-get update && apt-get install curl`.
@@ -53,7 +64,7 @@ a [Releases exteplayer3](https://github.com/Blacker91/exteplayer3-dreamos/releas
 dpkg -i exteplayer3-dreamos_*.deb enigma2-plugin-systemplugins-serviceapp-dreamos_*.deb
 systemctl restart enigma2
 ```
-Potom nespouštěj `apt-get -f install`, balíčky nejsou v Dreamově feedu a apt by je odebral.
+Pro aktualizace přes apt přidej řádek feedu z části [Aktualizace](#aktualizace) do `/etc/apt/sources.list.d/serviceapp-dreamos.list`.
 
 ## Nastavení
 Menu → Pluginy → ServiceApp.

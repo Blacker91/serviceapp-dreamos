@@ -39,6 +39,11 @@ done
 
 dpkg -i "$TMP"/*.deb || { echo "Installation failed"; rm -rf "$TMP"; exit 1; }
 rm -rf "$TMP"
+
+# apt feed with the released packages: later updates come with
+#   apt-get update && apt-get upgrade
+echo "deb [trusted=yes] https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/feed ./" > /etc/apt/sources.list.d/serviceapp-dreamos.list
+echo "Updates: apt-get update && apt-get upgrade (feed added to /etc/apt/sources.list.d/serviceapp-dreamos.list)"
 echo "Done. Restarting enigma2..."
 sleep 2
 systemctl restart enigma2
