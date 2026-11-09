@@ -1,0 +1,100 @@
+Package: enigma2-plugin-systemplugins-serviceapp-dreamos
+Version: 0.5-dreamos19
+Architecture: armhf
+Maintainer: Blacker91
+Installed-Size: 492
+Depends: enigma2 (>= 4.3.3r3-r0.0), enigma2 (<< 4.3.3r4), exteplayer3-dreamos (>= 184-dreamos3), libssl1.0.0, libcrypto1.0.0, libstdc++6, python-core
+Filename: enigma2-plugin-systemplugins-serviceapp-dreamos_0.5-dreamos19_armhf.deb
+Size: 201376
+MD5sum: 8c8d337e645b08ed6682848b3d29c7a9
+SHA1: 979ffd3732b1568adc2d208dd1f6c9d991131a16
+SHA256: 9e8af3b27b24cddf4319e2c69a808c737d2ef7e9b426656e6ba8e90b8b3133fd
+Section: extra
+Priority: optional
+Homepage: https://github.com/Blacker91/serviceapp-dreamos
+Description: ServiceApp for DreamOS 2.5 (DM900/DM920)
+ ServiceApp (service type 5002, exteplayer3) for DreamOS 2.5 / enigma2 4.3.3r3.
+ Pause/seek in the InfoBar, EPG for 5002 services, subtitles, optional
+ replacement of servicemp3 (4097) for streams and files.
+
+Package: enigma2-plugin-systemplugins-serviceapp-dreamos
+Version: 0.5-dreamos19
+Architecture: mipsel
+Maintainer: Blacker91
+Installed-Size: 684
+Depends: enigma2 (>= 4.3.3r3-r0.0), enigma2 (<< 4.3.3r4), exteplayer3-dreamos (>= 184-dreamos3), libssl1.0.0, libcrypto1.0.0, libstdc++6, python-core
+Filename: enigma2-plugin-systemplugins-serviceapp-dreamos_0.5-dreamos19_mipsel.deb
+Size: 227632
+MD5sum: 2e8a8c32613982d164868f1f10c7c4a9
+SHA1: 741f639d15ce43501a102284f31b07a15f69633f
+SHA256: f3c74cb4cc62d7c3a85d48bebca0898fc564df7a138f552bfc7fa9ab089f33a5
+Section: extra
+Priority: optional
+Homepage: https://github.com/Blacker91/serviceapp-dreamos
+Description: ServiceApp for DreamOS 2.5 (DM520/DM525)
+ ServiceApp (service type 5002, exteplayer3) for DreamOS 2.5 / enigma2 4.3.3r3.
+ Pause/seek in the InfoBar, EPG for 5002 services, subtitles, optional
+ replacement of servicemp3 (4097) for streams and files.
+
+Package: enigma2-plugin-systemplugins-serviceapp-dreamos
+Version: 0.5-dreamos19
+Architecture: arm64
+Maintainer: Blacker91
+Installed-Size: 652
+Depends: enigma2 (>= 4.5.1r11-r0.0), enigma2 (<< 4.5.1r12), libssl1.0.2, libcrypto1.0.2, libstdc++6, python-core
+Recommends: exteplayer3
+Filename: enigma2-plugin-systemplugins-serviceapp-dreamos_0.5-dreamos19_arm64.deb
+Size: 221140
+MD5sum: 2281fa7d85347fa79628a01acadc3c31
+SHA1: 12c98c7a1e5305bafe7f87b7dc52dd69b2f3841f
+SHA256: 04ef691d4970226947c3e2468f0b597e03d053cd749dc0b10508dc5a30d28ed2
+Section: extra
+Priority: optional
+Homepage: https://github.com/Blacker91/serviceapp-dreamos
+Description: ServiceApp for DreamOS 2.6 (Dreambox One/Two)
+ ServiceApp (service type 5002, exteplayer3) for DreamOS 2.6 / enigma2 4.5.1r11.
+ Pause/seek in the InfoBar, EPG for 5002 services, subtitles, optional
+ replacement of servicemp3 (4097) for streams and files.
+
+Package: exteplayer3-dreamos
+Version: 185-dreamos2
+Architecture: mipsel
+Maintainer: Blacker91
+Installed-Size: 22776
+Conflicts: ffmpeg-exteplayer3-dreamos
+Replaces: ffmpeg-exteplayer3-dreamos
+Provides: exteplayer3, ffmpeg-exteplayer3-dreamos
+Filename: exteplayer3-dreamos_185-dreamos2_mipsel.deb
+Size: 9756404
+MD5sum: 181106c7b7f2ba893f5d231f4d8cf8f5
+SHA1: 50e717f2ff1a987235612cd5299bef15b83a99a6
+SHA256: 541f1c99aef7b20aa9b633161cb7a103d6da9020ce08336790f2f3a6aa1f2163
+Section: multimedia
+Priority: optional
+Homepage: https://github.com/Blacker91/exteplayer3-dreamos
+Description: Static exteplayer3 and ffmpeg for DreamOS Dreamboxes
+ exteplayer3 (skyjet18) with FFmpeg 6.1, OpenSSL 3 and libxml2, statically
+ linked: HLS, DASH, CENC DRM keys, separate audio. ffmpeg is installed in
+ /usr/lib/exteplayer3_deps for ArchivCZSK, the system ffmpeg is not touched.
+
+Package: exteplayer3-dreamos
+Version: 185-dreamos2
+Architecture: armhf
+Maintainer: Blacker91
+Installed-Size: 17784
+Conflicts: ffmpeg-exteplayer3-dreamos
+Replaces: ffmpeg-exteplayer3-dreamos
+Provides: exteplayer3, ffmpeg-exteplayer3-dreamos
+Filename: exteplayer3-dreamos_185-dreamos2_armhf.deb
+Size: 9174044
+MD5sum: c8b091830d17d5d508c85ba277f4a485
+SHA1: 8ad34359b27cac62c26f1466d4081a46dc5b58a8
+SHA256: 4493304e19a8ec18884b1404001915b1e8911ecff7d21bc1808d30a79d74bd08
+Section: multimedia
+Priority: optional
+Homepage: https://github.com/Blacker91/exteplayer3-dreamos
+Description: Static exteplayer3 and ffmpeg for DreamOS Dreamboxes
+ exteplayer3 (skyjet18) with FFmpeg 6.1, OpenSSL 3 and libxml2, statically
+ linked: HLS, DASH, CENC DRM keys, separate audio. ffmpeg is installed in
+ /usr/lib/exteplayer3_deps for ArchivCZSK, the system ffmpeg is not touched.
+
