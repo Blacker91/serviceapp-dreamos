@@ -1,8 +1,8 @@
 #!/bin/sh
 # ServiceApp + exteplayer3 + ffmpeg for DreamOS 2.5 (DM520/DM525/DM900/DM920)
 #   curl -fsSL https://raw.githubusercontent.com/Blacker91/serviceapp-dreamos/dreamos/installer.sh | sh
-SERVICEAPP=0.5-dreamos18
-EXTEPLAYER3=185-dreamos1
+SERVICEAPP=0.5-dreamos19
+EXTEPLAYER3=185-dreamos2
 
 command -v dpkg >/dev/null 2>&1 || { echo "This installer is for DreamOS (.deb) only."; exit 1; }
 ARCH="$(dpkg --print-architecture 2>/dev/null)"
