@@ -296,6 +296,9 @@ eServiceApp::eServiceApp(eServiceReference ref):
 	m_stopping = false;
 	m_live_reconnect_timer = eTimer::create(eApp);
 	CONNECT(m_live_reconnect_timer->timeout, eServiceApp::liveReconnect);
+	m_decoder_size_checks = 0;
+	m_decoder_size_timer = eTimer::create(eApp);
+	CONNECT(m_decoder_size_timer->timeout, eServiceApp::checkDecoderSize);
 #endif
 };
 
@@ -712,6 +715,8 @@ void eServiceApp::gotExtPlayerMessage(int message)
 			m_player_started = true;
 #ifdef DREAMOS
 			m_player_start_time = ::time(0);
+			m_decoder_size_checks = 0;
+			m_decoder_size_timer->start(1500, true);
 #endif
 			m_event_updated_info_timer->start(1000, true);
 #ifdef HAVE_EPG
@@ -926,6 +931,7 @@ RESULT eServiceApp::stop()
 #ifdef DREAMOS
 	m_stopping = true;
 	if (m_live_reconnect_timer) m_live_reconnect_timer->stop();
+	if (m_decoder_size_timer) m_decoder_size_timer->stop();
 #endif
 	if (m_resolver) m_resolver->stop();
 	player->stop();
@@ -971,6 +977,47 @@ void eServiceApp::liveReconnect()
 	m_player_started = false;
 	m_paused = false;
 	start();
+}
+#endif
+
+#ifdef DREAMOS
+static int readDecoderValue(const char *name, int base)
+{
+	char path[64], buf[32];
+	snprintf(path, sizeof(path), "/proc/stb/vmpeg/0/%s", name);
+	FILE *f = fopen(path, "r");
+	if (!f)
+		return -1;
+	int ret = -1;
+	if (fgets(buf, sizeof(buf), f))
+		ret = (int)strtol(buf, NULL, base);
+	fclose(f);
+	return ret;
+}
+
+void eServiceApp::checkDecoderSize()
+{
+	if (m_stopping || (m_width > 0 && m_height > 0))
+		return;
+	int w = readDecoderValue("xres", 16), h = readDecoderValue("yres", 16);
+	if (w > 0 && h > 0)
+	{
+		eDebug("[ServiceApp] picture size from decoder: %dx%d", w, h);
+		m_width = w;
+		m_height = h;
+		if (m_framerate <= 0)
+		{
+			int f = readDecoderValue("framerate", 10);
+			if (f > 0)
+				m_framerate = f;
+		}
+		if (m_progressive < 0)
+			m_progressive = readDecoderValue("progressive", 10);
+		m_event(this, evVideoSizeChanged);
+		return;
+	}
+	if (++m_decoder_size_checks < 10)
+		m_decoder_size_timer->start(1000, true);
 }
 #endif
 

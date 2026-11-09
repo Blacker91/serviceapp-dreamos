@@ -336,6 +336,27 @@ void ExtEplayer3::handleJsonOutput(cJSON *json)
 		{
 			v.progressive = progressive->valueint;
 		}
+		/* a live TS often starts before FFmpeg knows the picture size (w/h 0),
+		 * keep what the decoder already reported */
+		if (v.width <= 0 && mVideo.width > 0)
+			v.width = mVideo.width;
+		if (v.height <= 0 && mVideo.height > 0)
+			v.height = mVideo.height;
+		mVideo = v;
+		recvVideoTrackCurrent(0, v);
+	}
+	else if (!strcmp(key, "v_e"))
+	{
+		/* decoder event (VIDEO_EVENT_SIZE/FRAME_RATE/PROGRESSIVE_CHANGED): the
+		 * real picture size, also for streams where FFmpeg did not report it */
+		videoStream v = mVideo;
+		cJSON *w = cJSON_GetObjectItem(value, "w"), *h = cJSON_GetObjectItem(value, "h");
+		cJSON *f = cJSON_GetObjectItem(value, "f"), *p = cJSON_GetObjectItem(value, "p");
+		if (w && w->valueint > 0) v.width = w->valueint;
+		if (h && h->valueint > 0) v.height = h->valueint;
+		if (f && f->valueint > 0) v.framerate = f->valueint;
+		if (p && p->valueint >= 0) v.progressive = p->valueint;
+		mVideo = v;
 		recvVideoTrackCurrent(0, v);
 	}
 	else if (!strcmp(key, "a_s"))

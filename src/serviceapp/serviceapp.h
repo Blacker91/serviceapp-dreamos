@@ -116,6 +116,11 @@ class eServiceApp : public Object,
 	bool m_stopping;
 	bool isLiveStream();
 	void liveReconnect();
+	/* picture size from the decoder (/proc/stb/vmpeg/0) when the player did
+	 * not report it, e.g. live TS from Tvheadend */
+	ePtr<eTimer> m_decoder_size_timer;
+	int m_decoder_size_checks;
+	void checkDecoderSize();
 #endif
 #ifdef HAVE_EPG
 	ePtr<eTimer> m_nownext_timer;

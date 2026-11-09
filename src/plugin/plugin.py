@@ -10,7 +10,7 @@ import json
 from Components.ActionMap import ActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.Console import Console
-from Components.config import config, ConfigSubsection, ConfigSelection, ConfigBoolean, getConfigListEntry, ConfigSubDict, ConfigInteger, ConfigNothing
+from Components.config import config, configfile, ConfigSubsection, ConfigSelection, ConfigBoolean, getConfigListEntry, ConfigSubDict, ConfigInteger, ConfigNothing
 from Components.Label import Label
 from Components.Sources.StaticText import StaticText
 from Plugins.Plugin import PluginDescriptor
@@ -115,6 +115,20 @@ for key in list(config_serviceapp.exteplayer3.keys()):
     config_serviceapp.exteplayer3[key].lpcm_injecion = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].downmix = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].rtmp_protocol = ConfigSelection(default="auto", choices=["auto", "ffmpeg", "librtmp"])
+
+# DreamOS: up to 0.5-dreamos16 DTS software decoding was off by default and
+# DreamOS stores default values in /etc/enigma2/settings too, so the new default
+# never reached existing installations (EMC/4097 played DTS films silently).
+# Turn it on once; whoever wants DTS passthrough turns it off again.
+config_serviceapp.dreamos_dts_migrated = ConfigBoolean(default=False)
+if IMAGEDISTRO == "dreamos" and not config_serviceapp.dreamos_dts_migrated.value:
+    for key in list(config_serviceapp.exteplayer3.keys()):
+        config_serviceapp.exteplayer3[key].dts_swdecoding.value = True
+        config_serviceapp.exteplayer3[key].dts_swdecoding.save()
+    config_serviceapp.dreamos_dts_migrated.value = True
+    config_serviceapp.dreamos_dts_migrated.save()
+    configfile.save()
+    print("[ServiceApp] DTS software decoding turned on (one-time update)")
 
 
 def key_to_setting_id(key):

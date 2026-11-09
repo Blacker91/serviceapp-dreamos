@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5-dreamos19
+- Picture resolution in the InfoBar also for live TS streams (e.g. Tvheadend):
+  FFmpeg often starts them before it knows the picture size, so ServiceApp now
+  also takes the size from exteplayer3's decoder events and, when still
+  unknown, reads it from the decoder (/proc/stb/vmpeg/0) after the start.
+- DTS software decoding is turned on once in both sections (ServiceMp3 4097
+  and ServiceExtEplayer3 5002): installations from before 0.5-dreamos17 kept
+  the old "off" value, so films with DTS (e.g. from EMC) had no sound. Turn it
+  off again if you pass DTS to an AV receiver.
+
 ## 0.5-dreamos18
 - Live streams (e.g. Tvheadend through ArchivCZSK) that end by themselves,
   because the server or proxy closed the connection, are reconnected instead

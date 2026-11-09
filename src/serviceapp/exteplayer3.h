@@ -46,6 +46,8 @@ struct ExtEplayer3Options : public IOption
 class ExtEplayer3: public PlayerApp, public BasePlayer
 {
 	ExtEplayer3Options mPlayerOptions;
+	/* last stream info ("v_c"), completed by decoder events ("v_e") */
+	videoStream mVideo;
 	void handleProcessStopped(int retval);
 	void handleJsonOutput(cJSON* json);
 	std::vector<std::string> buildCommand();
