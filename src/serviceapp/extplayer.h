@@ -83,7 +83,10 @@ struct audioStream
 	int id;
 	std::string language_code; /* iso-639, if available. */
 	std::string description; /* clear text codec description */
-	audioStream(): id(-1){};
+	int channels;              /* exteplayer3 >= 187, else 0 */
+	std::string channel_layout; /* e.g. "5.1(side)", exteplayer3 >= 187 */
+	std::string codec_name;     /* source codec, e.g. "DTS", exteplayer3 >= 187 */
+	audioStream(): id(-1), channels(0){};
 };
 
 
@@ -120,6 +123,7 @@ public:
 	virtual int sendUpdateAudioTracksList(){ return -1;}
 	virtual int sendUpdateAudioTrackCurrent(){ return -1;}
 	virtual int sendAudioSelectTrack(int trackId){ return -1;}
+	virtual int sendAudioSelectChannel(int channel){ return -1;}
 	virtual int sendUpdateSubtitleTracksList(){ return -1;}
 	virtual int sendUpdateSubtitleTrackCurrent(){ return -1;}
 	virtual int sendSubtitleSelectTrack(int trackId){ return -1;}
@@ -217,6 +221,7 @@ class PlayerBackend: public Object, public eThread, public E2_THREAD_MAINLOOP, p
 			tAudioSelect,
 			audioList,
 			tAudioList,
+			tAudioChannel,
 			subtitleSelect,
 			tSubtitleSelect,
 			subtitleList,
@@ -351,6 +356,7 @@ public:
 	int getSubtitles(std::queue<subtitleMessage>&);
 	int audioGetNumberOfTracks(int timeout=0);
 	int audioSelectTrack(int trackId);
+	int audioSelectChannel(int channel);
 	int audioGetTrackInfo(audioStream& trackInfo, int trackId);
 	int audioGetCurrentTrackNum();
 	int subtitleGetNumberOfTracks(int timeout=0);

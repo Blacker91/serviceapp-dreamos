@@ -12,6 +12,8 @@ const std::string  EXT3_SW_DECODING_EAC3           = "eac3_swdec";
 const std::string  EXT3_SW_DECODING_DTS            = "dts_swdec";
 const std::string  EXT3_SW_DECODING_MP3            = "mp3_swdec";
 const std::string  EXT3_SW_DECODING_WMA            = "wma_swdec";
+const std::string  EXT3_DTS_TO_AC3                 = "dts_ac3";
+const std::string  EXT3_TRUEHD_TO_AC3              = "truehd_ac3";
 const std::string  EXT3_DOWNMIX                    = "downmix";
 const std::string  EXT3_LPCM_INJECTION             = "lpcm_injection";
 const std::string  EXT3_NO_PCM_RESAMPLING          = "no_pcm_resampling";
@@ -47,6 +49,8 @@ ExtEplayer3Options::ExtEplayer3Options()
 	settingMap[EXT3_SW_DECODING_DTS]            = SettingEntry ("-d", "bool");
 	settingMap[EXT3_SW_DECODING_MP3]            = SettingEntry ("-m", "bool");
 	settingMap[EXT3_SW_DECODING_WMA]            = SettingEntry ("-w", "bool");
+	settingMap[EXT3_DTS_TO_AC3]                 = SettingEntry ("-Z", "bool"); /* exteplayer3 >= 187 */
+	settingMap[EXT3_TRUEHD_TO_AC3]              = SettingEntry ("-X", "bool"); /* exteplayer3 >= 187 */
 	settingMap[EXT3_LPCM_INJECTION]             = SettingEntry ("-l", "bool");
 	settingMap[EXT3_DOWNMIX]                    = SettingEntry ("-s", "bool");
 	settingMap[EXT3_NO_PCM_RESAMPLING]          = SettingEntry ("-r", "bool");
@@ -279,6 +283,14 @@ int ExtEplayer3::sendAudioSelectTrack(int trackId)
 	return processSend(sstm.str());
 }
 
+int ExtEplayer3::sendAudioSelectChannel(int channel)
+{
+	/* exteplayer3 >= 187: dual mono channel, 0 left, 1 stereo, 2 right */
+	std::stringstream sstm;
+	sstm << "am" << channel << std::endl;
+	return processSend(sstm.str());
+}
+
 int ExtEplayer3::sendUpdateSubtitleTracksList(){ return processSend(std::string("sl\n"));}
 int ExtEplayer3::sendUpdateSubtitleTrackCurrent(){ return processSend(std::string("sc\n"));}
 
@@ -308,6 +320,19 @@ void ExtEplayer3::handleProcessStopped(int retval)
 	recvStopped(0);
 }
 
+static void parseAudioChannels(cJSON *item, audioStream &a)
+{
+	cJSON *c = cJSON_GetObjectItem(item, "c");
+	cJSON *cl = cJSON_GetObjectItem(item, "cl");
+	if (c && (c->type & 0xFF) == cJSON_Number)
+		a.channels = c->valueint;
+	if (cl && (cl->type & 0xFF) == cJSON_String && cl->valuestring)
+		a.channel_layout = cl->valuestring;
+	cJSON *d = cJSON_GetObjectItem(item, "d");
+	if (d && (d->type & 0xFF) == cJSON_String && d->valuestring)
+		a.codec_name = d->valuestring;
+}
+
 void ExtEplayer3::handleJsonOutput(cJSON *json)
 {
 	if (!json->child)
@@ -317,7 +342,18 @@ void ExtEplayer3::handleJsonOutput(cJSON *json)
 	const char *key = json->child->string;
 	cJSON* value = cJSON_GetObjectItem(json, key);
 
-	if (!strcmp(key, "PLAYBACK_PLAY"))
+	if (!strcmp(key, "FF_ERROR"))
+	{
+		/* exteplayer3 >= 187: why the open or the playback failed */
+		errorMessage e;
+		cJSON *msg = cJSON_GetObjectItem(value, "msg");
+		cJSON *code = cJSON_GetObjectItem(value, "code");
+		e.message = (msg && (msg->type & 0xFF) == cJSON_String && msg->valuestring) ? msg->valuestring : "";
+		e.code = (code && (code->type & 0xFF) == cJSON_Number) ? code->valueint : -1;
+		eWarning("[ExtEplayer3] error %d: %s", e.code, e.message.c_str());
+		recvErrorMessage(e);
+	}
+	else if (!strcmp(key, "PLAYBACK_PLAY"))
 	{
 		if (!cJSON_GetObjectItem(value, "sts")->valueint)
 			recvStarted(0);
@@ -375,6 +411,7 @@ void ExtEplayer3::handleJsonOutput(cJSON *json)
 		a.id = cJSON_GetObjectItem(value, "id")->valueint;
 		a.description = cJSON_GetObjectItem(value, "e")->valuestring;
 		a.language_code = cJSON_GetObjectItem(value, "n")->valuestring;
+		parseAudioChannels(value, a);
 		recvAudioTrackCurrent(0, a);
 	}
 	else if (!strcmp(key, "a_l"))
@@ -387,6 +424,7 @@ void ExtEplayer3::handleJsonOutput(cJSON *json)
 			a.id = cJSON_GetObjectItem(subitem, "id")->valueint;
 			a.description = cJSON_GetObjectItem(subitem, "e")->valuestring;
 			a.language_code = cJSON_GetObjectItem(subitem, "n")->valuestring;
+			parseAudioChannels(subitem, a);
 			streams.push_back(a);
 		}
 		recvAudioTracksList(0, streams);

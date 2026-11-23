@@ -11,6 +11,8 @@ extern const std::string EXT3_SW_DECODING_EAC3;
 extern const std::string EXT3_SW_DECODING_DTS;
 extern const std::string EXT3_SW_DECODING_MP3;
 extern const std::string EXT3_SW_DECODING_WMA;
+extern const std::string EXT3_DTS_TO_AC3;
+extern const std::string EXT3_TRUEHD_TO_AC3;
 extern const std::string EXT3_DOWNMIX;
 extern const std::string EXT3_LPCM_INJECTION;
 extern const std::string EXT3_NO_PCM_RESAMPLING;
@@ -64,6 +66,7 @@ class ExtEplayer3: public PlayerApp, public BasePlayer
 	int sendUpdateAudioTracksList();
 	int sendUpdateAudioTrackCurrent();
 	int sendAudioSelectTrack(int trackId);
+	int sendAudioSelectChannel(int channel);
 	int sendUpdateSubtitleTracksList();
 	int sendUpdateSubtitleTrackCurrent();
 	int sendSubtitleSelectTrack(int trackId);

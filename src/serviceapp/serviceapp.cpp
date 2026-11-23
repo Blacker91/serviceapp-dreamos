@@ -1,6 +1,7 @@
 #include <ctime>
 #include <cstdio>
 #include <cstring>
+#include <cerrno>
 #include "Python.h"
 #include <sstream>
 #include <algorithm>
@@ -22,6 +23,10 @@
 #include "serviceapp.h"
 #include "gstplayer.h"
 #include "exteplayer3.h"
+
+#ifdef DREAMOS
+static bool isPermanentPlayerError(int code);
+#endif
 
 #include <Python.h>
 
@@ -263,6 +268,7 @@ eServiceApp::eServiceApp(eServiceReference ref):
 	m_resolve_uri("resolve://"),
 	m_event_started(false),
 	m_paused(false),
+	m_audio_channel(STEREO),
 	m_player_started(false),
 	m_framerate(-1),
 	m_width(-1),
@@ -745,6 +751,13 @@ void eServiceApp::gotExtPlayerMessage(int message)
 				 * for a while starts the count again */
 				if (m_player_started && ::time(0) - m_player_start_time >= 30)
 					m_live_reconnects = 0;
+				errorMessage err;
+				if (!player->getErrorMessage(err) && isPermanentPlayerError(err.code))
+				{
+					eDebug("[ServiceApp] live stream: %s, not reconnecting", err.message.c_str());
+					m_event(this, evNotFound);
+					break;
+				}
 				if (m_live_reconnects < 5)
 				{
 					m_live_reconnects++;
@@ -976,7 +989,22 @@ void eServiceApp::liveReconnect()
 	CONNECT(player->gotPlayerMessage, eServiceApp::gotExtPlayerMessage);
 	m_player_started = false;
 	m_paused = false;
+	m_audio_channel = STEREO;
 	start();
+}
+
+/* FFmpeg error of exteplayer3 (FF_ERROR, >= 187) that another attempt cannot
+ * fix: HTTP 400/401/403/404/4xx, file not found */
+static bool isPermanentPlayerError(int code)
+{
+#define SA_FFERRTAG(a, b, c, d) (-(int)((unsigned)(a) | ((unsigned)(b) << 8) | ((unsigned)(c) << 16) | ((unsigned)(d) << 24)))
+	return code == -ENOENT
+		|| code == SA_FFERRTAG(0xF8, '4', '0', '0')
+		|| code == SA_FFERRTAG(0xF8, '4', '0', '1')
+		|| code == SA_FFERRTAG(0xF8, '4', '0', '3')
+		|| code == SA_FFERRTAG(0xF8, '4', '0', '4')
+		|| code == SA_FFERRTAG(0xF8, '4', 'X', 'X');
+#undef SA_FFERRTAG
 }
 #endif
 
@@ -1158,6 +1186,10 @@ RESULT eServiceApp::getTrackInfo(iAudioTrackInfo &trackInfo, unsigned int n)
 	}
 
 	std::string desc = track.description;
+	/* decoded in software, the track is reported as PCM ("A_IPCM", shown as
+	 * "AC3" below); exteplayer3 >= 187 also sends the source codec */
+	if ((desc == "A_IPCM" || desc == "A_LPCM") && !track.codec_name.empty())
+		desc = track.codec_name;
 
 	std::map<std::string, std::string> audioReplacements = {
 		{"A_", ""},
@@ -1185,6 +1217,30 @@ RESULT eServiceApp::getTrackInfo(iAudioTrackInfo &trackInfo, unsigned int n)
 		}
 	}
 
+	/* exteplayer3 >= 187 reports the channels: "AC3 5.1", "AAC stereo" */
+	if (track.channels > 0)
+	{
+		std::string layout = track.channel_layout;
+		size_t paren = layout.find('(');
+		if (paren != std::string::npos)
+			layout.erase(paren);
+		if (layout.empty() || layout.find_first_not_of("0123456789.") != std::string::npos)
+		{
+			if (track.channels == 1)
+				layout = "mono";
+			else if (track.channels == 2)
+				layout = "stereo";
+			else if (layout != "mono" && layout != "stereo")
+			{
+				char buf[16];
+				snprintf(buf, sizeof(buf), "%dch", track.channels);
+				layout = buf;
+			}
+		}
+		if (!layout.empty())
+			desc += (desc.empty() ? "" : " ") + layout;
+	}
+
 #ifdef DREAMOS
 	trackInfo.setDescription(desc);
 	trackInfo.setLanguage(track.language_code);
@@ -1206,13 +1262,20 @@ int eServiceApp::getCurrentTrack()
 int eServiceApp::getCurrentChannel()
 {
 	eDebug("eServiceApp::getCurrentChannel");
-	return STEREO;
+	return m_audio_channel;
 }
 
 RESULT eServiceApp::selectChannel(int i)
 {
+	/* dual mono: exteplayer3 >= 187 plays the left or right channel on both
+	 * outputs ("am<n>", same numbers as LEFT/STEREO/RIGHT) */
 	eDebug("eServiceApp::selectChannel %d", i);
-	return -1;
+	if (i != LEFT && i != STEREO && i != RIGHT)
+		return -1;
+	if (player->audioSelectChannel(i) < 0)
+		return -1;
+	m_audio_channel = i;
+	return 0;
 }
 
 
@@ -2078,8 +2141,10 @@ exteplayer3_set_setting(PyObject *self, PyObject *args)
 	bool downmix;
 	bool lpcmInjection;
 	int rtmpProtocol;
+	bool dtsToAc3 = false;
+	bool truehdToAc3 = false;
 
-	if (!PyArg_ParseTuple(args, "ibbbbbbbbi",
+	if (!PyArg_ParseTuple(args, "ibbbbbbbbi|bb",
 				&settingId,
 				&aacSwDecoding,
 				&dtsSwDecoding,
@@ -2089,7 +2154,9 @@ exteplayer3_set_setting(PyObject *self, PyObject *args)
 				&ac3SwDecoding,
 				&eac3SwDecoding,
 				&mp3SwDecoding,
-				&rtmpProtocol))
+				&rtmpProtocol,
+				&dtsToAc3,
+				&truehdToAc3))
 		return NULL;
 
 	ExtEplayer3Options *options = NULL;
@@ -2123,6 +2190,8 @@ exteplayer3_set_setting(PyObject *self, PyObject *args)
 		options->GetSettingMap()[EXT3_LPCM_INJECTION].setValue(lpcmInjection);
 		options->GetSettingMap()[EXT3_RTMP_PROTOCOL].setValue(rtmpProtocol);
 		options->GetSettingMap()[EXT3_DOWNMIX].setValue(downmix);
+		options->GetSettingMap()[EXT3_DTS_TO_AC3].setValue(dtsToAc3);
+		options->GetSettingMap()[EXT3_TRUEHD_TO_AC3].setValue(truehdToAc3);
 	}
 	return Py_BuildValue("b", ret);
 }
@@ -2242,7 +2311,7 @@ static PyMethodDef serviceappMethods[] = {
 	 " bufferDuration - in seconds\n"
 	},
 	{"exteplayer3_set_setting", exteplayer3_set_setting, METH_VARARGS,
-	 "set exteplayer3 settings (setting_id, aacSwDecoding, dtsSwDecoding, wmaSwDecoding, lpcmInjection, downmix, ac3SwDecoding, eac3SwDecoding, mp3SwDecoding, rtmpProtocol)\n\n"
+	 "set exteplayer3 settings (setting_id, aacSwDecoding, dtsSwDecoding, wmaSwDecoding, lpcmInjection, downmix, ac3SwDecoding, eac3SwDecoding, mp3SwDecoding, rtmpProtocol[, dtsToAc3, truehdToAc3])\n\n"
 	 " setting_id - (0 - servicemp3, 1 - servicegst, 2 - serviceextep3, 3 - user)\n"
 	 " aacSwDecoding - (True, False)\n"
 	 " dtsSwDecoding - (True, False)\n"

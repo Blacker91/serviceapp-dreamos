@@ -305,7 +305,7 @@ int PlayerBackend::getLength(int& mseconds)
 
 int PlayerBackend::getErrorMessage(errorMessage& error)
 {
-	if (!playbackStarted || !pErrorMessage)
+	if (!pErrorMessage)
 	{
 		return -1;
 	}
@@ -346,6 +346,14 @@ int PlayerBackend::audioSelectTrack(int trackNum)
 		return 0;
 	}
 	return -1;
+}
+
+int PlayerBackend::audioSelectChannel(int channel)
+{
+	if (channel < 0 || channel > 2)
+		return -1;
+	mMessageThread.send(Message(Message::tAudioChannel, channel));
+	return 0;
 }
 
 int PlayerBackend::audioGetTrackInfo(audioStream& trackInfo, int trackNum)
@@ -457,6 +465,10 @@ void PlayerBackend::gotMessage(const PlayerBackend::Message& message)
 		case Message::tAudioSelect:
 			eDebug("PlayerBackend::gotMessage - tAudioSelect");
 			pPlayer->sendAudioSelectTrack(message.dataInt);
+			break;
+		case Message::tAudioChannel:
+			eDebug("PlayerBackend::gotMessage - tAudioChannel %d", message.dataInt);
+			pPlayer->sendAudioSelectChannel(message.dataInt);
 			break;
 		case Message::tAudioList:
 			eDebug("PlayerBackend::gotMessage - tAudioList");

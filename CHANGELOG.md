@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5-dreamos20
+Needs exteplayer3 187 (exteplayer3-dreamos 187-dreamos1, installed with it;
+on Dreambox One the new options need exteplayer3 187 or newer too).
+- New options in both exteplayer3 sections: "DTS to AC3 5.1" and "TrueHD to
+  AC3 5.1". The Dreambox has no DTS/TrueHD decoder, software decoding gives
+  stereo PCM; with the option a soundbar or AV receiver gets 5.1 surround as
+  AC3, which also passes through HDMI ARC of TVs that do not pass DTS.
+- Audio track list shows the channels ("AC3 5.1", "AAC stereo"), and tracks
+  decoded in software show their real codec ("DTS 5.1" instead of "AC3").
+- Dual mono (two languages in one track, older TV recordings): the
+  left/right/stereo choice in the audio menu works.
+- The reason of a failed stream is in the log ("[ExtEplayer3] error ...");
+  a live stream that answers 403/404 or no longer exists is not reconnected
+  five times.
+
 ## 0.5-dreamos19
 - Picture resolution in the InfoBar also for live TS streams (e.g. Tvheadend):
   FFmpeg often starts them before it knows the picture size, so ServiceApp now

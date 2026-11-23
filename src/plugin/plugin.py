@@ -110,6 +110,9 @@ for key in list(config_serviceapp.exteplayer3.keys()):
     config_serviceapp.exteplayer3[key].ac3_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     # DreamOS: the Dreambox audio decoder has no DTS, decode it in software by default
     config_serviceapp.exteplayer3[key].dts_swdecoding = ConfigBoolean(default=(IMAGEDISTRO == "dreamos"), descriptions={False: _("false"), True: _("true")})
+    # exteplayer3 >= 187: DTS / TrueHD as AC3 5.1 for a soundbar or AV receiver
+    config_serviceapp.exteplayer3[key].dts_ac3 = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
+    config_serviceapp.exteplayer3[key].truehd_ac3 = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].mp3_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].wma_swdecoding = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
     config_serviceapp.exteplayer3[key].lpcm_injecion = ConfigBoolean(default=False, descriptions={False: _("false"), True: _("true")})
@@ -192,7 +195,9 @@ def init_serviceapp_settings():
                 player_cfg.ac3_swdecoding.value,
                 player_cfg.eac3_swdecoding.value,
                 player_cfg.mp3_swdecoding.value,
-                rtmp_proto_val)
+                rtmp_proto_val,
+                player_cfg.dts_ac3.value,
+                player_cfg.truehd_ac3.value)
 
     if config_serviceapp.servicemp3.player.value == "gstplayer":
         serviceapp_client.setServiceMP3GstPlayer()
@@ -256,6 +261,10 @@ class ServiceAppSettings(ConfigListScreen, Screen):
             exteplayer3_options_cfg.ac3_swdecoding, _("Turn on AC3 software decoding.")))
         config_list.append(getConfigListEntry("  " + _("DTS software decoding"),
             exteplayer3_options_cfg.dts_swdecoding, _("Turn on DTS software decoding.")))
+        config_list.append(getConfigListEntry("  " + _("DTS to AC3 5.1"),
+            exteplayer3_options_cfg.dts_ac3, _("Convert DTS to AC3 5.1 for a soundbar or AV receiver (digital output, HDMI ARC). Needs exteplayer3 187 or newer.")))
+        config_list.append(getConfigListEntry("  " + _("TrueHD to AC3 5.1"),
+            exteplayer3_options_cfg.truehd_ac3, _("Convert Dolby TrueHD/MLP to AC3 5.1 for a soundbar or AV receiver. Needs exteplayer3 187 or newer.")))
         config_list.append(getConfigListEntry("  " + _("MP3 software decoding"),
             exteplayer3_options_cfg.mp3_swdecoding, _("Turn on MP3 software decoding.")))
         config_list.append(getConfigListEntry("  " + _("WMA software decoding"),

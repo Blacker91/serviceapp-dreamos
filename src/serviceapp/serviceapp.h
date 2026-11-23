@@ -73,6 +73,7 @@ class eServiceApp : public Object,
 
 	bool m_event_started;
 	bool m_paused;
+	int m_audio_channel;
 	bool m_player_started;
 	int m_framerate, m_width, m_height, m_progressive;
 
