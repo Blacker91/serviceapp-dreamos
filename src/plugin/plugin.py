@@ -340,8 +340,8 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         config_list += self.player_options("exteplayer3", "serviceexteplayer3")
         if IMAGEDISTRO == "dreamos":
             config_list.append(getConfigListEntry("", ConfigNothing()))
-            config_list.append(getConfigListEntry(_("Service reference for picons"),
-                config_serviceapp.picon_ref_4097, _("How 5001/5002 services are reported to the skin: as 4097 (picons named 4097_... or 1_...) or with their real type (picons named 5002_...).")))
+            config_list.append(getConfigListEntry(_("Report 5001/5002 as 4097 (picons)"),
+                config_serviceapp.picon_ref_4097, _("On: 5001/5002 services are reported to the skin as 4097 (picons named 4097_... or 1_...). Off: with their real type (picons named 5002_...).")))
             config_list.append(getConfigListEntry("", ConfigNothing()))
             config_list.append(getConfigListEntry(_("Subtitles"), ConfigNothing()))
             config_list.append(getConfigListEntry("  " + _("Font size"),
