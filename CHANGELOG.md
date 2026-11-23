@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5-dreamos20
+## 0.5-dreamos21
 Needs exteplayer3 187 (exteplayer3-dreamos 187-dreamos1, installed with it;
 on Dreambox One the new options need exteplayer3 187 or newer too).
 - New options in both exteplayer3 sections: "DTS to AC3 5.1" and "TrueHD to
@@ -14,6 +14,9 @@ on Dreambox One the new options need exteplayer3 187 or newer too).
 - The reason of a failed stream is in the log ("[ExtEplayer3] error ...");
   a live stream that answers 403/404 or no longer exists is not reconnected
   five times.
+- New option "Service reference for picons" (DreamOS): 5001/5002 services
+  are reported to the skin as 4097 (default, as before) or with their real
+  type, for picons named 5002_... (forum request).
 
 ## 0.5-dreamos19
 - Picture resolution in the InfoBar also for live TS streams (e.g. Tvheadend):

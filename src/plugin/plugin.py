@@ -66,6 +66,11 @@ config_serviceapp.servicemp3.mode = ConfigSelection(default="urls",
 config_serviceapp.servicemp3.mode.value = serviceapp_client.getServiceMP3ReplaceMode()
 config_serviceapp.servicemp3.player = ConfigSelection(default=SERVICEMP3_PLAYER_DEFAULT, choices=player_choices)
 
+# DreamOS: service reference reported to skins (picons) for 5001/5002/5003:
+# as 4097 (default, picons named 4097_... or 1_...) or the real type
+config_serviceapp.picon_ref_4097 = ConfigBoolean(default=True,
+    descriptions={False: _("real type (5001/5002)"), True: _("as 4097")})
+
 # DreamOS subtitle overlay
 config_serviceapp.subtitles = ConfigSubsection()
 config_serviceapp.subtitles.font_size = ConfigSelection(default="normal",
@@ -199,6 +204,9 @@ def init_serviceapp_settings():
                 player_cfg.dts_ac3.value,
                 player_cfg.truehd_ac3.value)
 
+    if IMAGEDISTRO == "dreamos":
+        serviceapp_client.setServicerefAs4097(config_serviceapp.picon_ref_4097.value)
+
     if config_serviceapp.servicemp3.player.value == "gstplayer":
         serviceapp_client.setServiceMP3GstPlayer()
     elif config_serviceapp.servicemp3.player.value == "exteplayer3":
@@ -331,6 +339,9 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         config_list.append(getConfigListEntry(_("ServiceExtEplayer3 (%s)") % str(serviceapp_client.ID_SERVICEEXTEPLAYER3), ConfigNothing()))
         config_list += self.player_options("exteplayer3", "serviceexteplayer3")
         if IMAGEDISTRO == "dreamos":
+            config_list.append(getConfigListEntry("", ConfigNothing()))
+            config_list.append(getConfigListEntry(_("Service reference for picons"),
+                config_serviceapp.picon_ref_4097, _("How 5001/5002 services are reported to the skin: as 4097 (picons named 4097_... or 1_...) or with their real type (picons named 5002_...).")))
             config_list.append(getConfigListEntry("", ConfigNothing()))
             config_list.append(getConfigListEntry(_("Subtitles"), ConfigNothing()))
             config_list.append(getConfigListEntry("  " + _("Font size"),

@@ -94,7 +94,7 @@ def setGstreamerPlayerSettings(settingId, videoSink, audioSink, subtitleEnabled,
                 bufferDuration)
 
 
-def setExtEplayer3Settings(settingId, aacSwDecoding, dtsSwDecoding, wmaSwDecoding, lpcmInjection, downmix, ac3SwDecoding=False, eac3SwDecoding=False, mp3SwDecoding=False, rtmpProtocol=0):
+def setExtEplayer3Settings(settingId, aacSwDecoding, dtsSwDecoding, wmaSwDecoding, lpcmInjection, downmix, ac3SwDecoding=False, eac3SwDecoding=False, mp3SwDecoding=False, rtmpProtocol=0, dtsToAc3=False, truehdToAc3=False):
 	return serviceapp.exteplayer3_set_setting(settingId,
                 aacSwDecoding,
                 dtsSwDecoding,
@@ -104,4 +104,12 @@ def setExtEplayer3Settings(settingId, aacSwDecoding, dtsSwDecoding, wmaSwDecodin
                 ac3SwDecoding,
                 eac3SwDecoding,
                 mp3SwDecoding,
-				rtmpProtocol)
+                rtmpProtocol,
+                dtsToAc3,
+                truehdToAc3)
+
+
+def setServicerefAs4097(enabled):
+	# DreamOS: report 5001/5002/5003 services as 4097 in sServiceref (picons)
+	if hasattr(serviceapp, "set_servicerefas4097"):
+		serviceapp.set_servicerefas4097(bool(enabled))

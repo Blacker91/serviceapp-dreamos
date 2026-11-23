@@ -26,6 +26,8 @@
 
 #ifdef DREAMOS
 static bool isPermanentPlayerError(int code);
+/* sServiceref of 5001/5002/5003 reported as 4097 (picons), plugin option */
+static bool g_servicerefAs4097 = true;
 #endif
 
 #include <Python.h>
@@ -1651,7 +1653,7 @@ std::string eServiceApp::getInfoString(int w)
 #ifdef DREAMOS
 		/* report 5001/5002/5003 as 4097 like Dream's servicemp3: skins and
 		 * picon renderers only map 4097 stream refs to 1_..._png picons */
-		if (m_ref.type == 5001 || m_ref.type == 5002 || m_ref.type == 5003)
+		if (g_servicerefAs4097 && (m_ref.type == 5001 || m_ref.type == 5002 || m_ref.type == 5003))
 		{
 			size_t colon = ref.find(':');
 			if (colon != std::string::npos)
@@ -2276,6 +2278,16 @@ static PyObject *servicemp3_takeover(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", ret);
 }
 
+static PyObject *set_servicerefas4097(PyObject *self, PyObject *args)
+{
+	int enabled = 1;
+	if (!PyArg_ParseTuple(args, "i", &enabled))
+		return NULL;
+	g_servicerefAs4097 = enabled != 0;
+	eDebug("[ServiceApp] sServiceref of 5001/5002/5003: %s", g_servicerefAs4097 ? "as 4097" : "real type");
+	Py_RETURN_NONE;
+}
+
 static PyObject *servicemp3_replaced(PyObject *self, PyObject *args)
 {
 	/* 0 - not replaced, 1 - 4097 URLs only, 2 - all 4097, 3 - 4097 local files only */
@@ -2292,6 +2304,8 @@ static PyMethodDef serviceappMethods[] = {
 	 "DreamOS: current subtitle for the plugin overlay -> (active, seq, text)"},
 	{"servicemp3_takeover", servicemp3_takeover, METH_NOARGS,
 	 "DreamOS: (re)register ServiceApp for 4097 if serviceapp_replaceservicemp3 exists; 0 = OK"},
+	{"set_servicerefas4097", set_servicerefas4097, METH_VARARGS,
+	 "DreamOS: report 5001/5002/5003 as 4097 in sServiceref (True, default) or the real type"},
 	{"servicemp3_replaced", servicemp3_replaced, METH_NOARGS,
 	 "DreamOS: 0 - 4097 not handled by ServiceApp, 1 - URLs only, 2 - all 4097 refs"},
 #endif
