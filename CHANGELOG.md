@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.5-dreamos22
-Needs exteplayer3 187 (exteplayer3-dreamos 187-dreamos1, installed with it;
+Needs exteplayer3 187 (exteplayer3-dreamos 187-dreamos2, installed with it;
 on Dreambox One the new options need exteplayer3 187 or newer too).
 - New options in both exteplayer3 sections: "DTS to AC3 5.1" and "TrueHD to
   AC3 5.1". The Dreambox has no DTS/TrueHD decoder, software decoding gives

@@ -27,7 +27,7 @@ for b in ${ARCHS:-mipsel arm aarch64}; do
 Recommends: exteplayer3"
   else
     OS="DreamOS 2.5 / enigma2 4.3.3r3"
-    DEPS="enigma2 (>= 4.3.3r3-r0.0), enigma2 (<< 4.3.3r4), exteplayer3-dreamos (>= 187-dreamos1), libssl1.0.0, libcrypto1.0.0, libstdc++6, python-core"
+    DEPS="enigma2 (>= 4.3.3r3-r0.0), enigma2 (<< 4.3.3r4), exteplayer3-dreamos (>= 187-dreamos2), libssl1.0.0, libcrypto1.0.0, libstdc++6, python-core"
   fi
   P="$WORK/pkg-$ARCH"; PD="$P/usr/lib/enigma2/python/Plugins/SystemPlugins/ServiceApp"
   rm -rf "$P"; mkdir -p "$P/DEBIAN" "$PD" "$P/usr/share/doc/$N"
